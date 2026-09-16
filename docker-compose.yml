@@ -1,0 +1,10 @@
+services:
+  eris-ai:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./artifacts/models:/app/artifacts/models:ro
