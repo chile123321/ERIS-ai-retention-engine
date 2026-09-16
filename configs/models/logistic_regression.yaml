@@ -1,0 +1,4 @@
+model: logistic_regression
+role: baseline
+random_seed: 42
+parameters: {} # TODO: define an approved search space.

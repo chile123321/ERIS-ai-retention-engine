@@ -1,0 +1,11 @@
+protocol_version: "1.0.0"
+selection_data: development_only
+metrics:
+  ranking: [average_precision, roc_auc]
+  classification: [precision, recall, f1, f2, confusion_matrix]
+  probability: [calibration_curve, brier_score]
+robustness:
+  missing_data: [] # TODO: define approved missingness scenarios and acceptance limits.
+threshold_selection: {} # TODO: define business costs/constraints using development data only.
+final_test:
+  locked_until_release_candidate: true

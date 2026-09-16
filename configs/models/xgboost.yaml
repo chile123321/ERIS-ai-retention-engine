@@ -1,0 +1,4 @@
+model: xgboost
+enabled: false
+random_seed: 42
+parameters: {} # Optional dependency; enable only when the environment supports it.
