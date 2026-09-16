@@ -1,0 +1,4 @@
+version: "v2-practical"
+status: pending_owner_approval
+description: "Features collectable through the ERIS product schema."
+features: [] # TODO: do not infer this list.

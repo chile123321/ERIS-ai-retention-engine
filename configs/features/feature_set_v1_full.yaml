@@ -1,0 +1,4 @@
+version: "v1-full"
+status: pending_source_verification
+description: "Up to 25 approved IBM HR candidate features."
+features: [] # TODO: copy only after validating the authoritative workspace catalog.

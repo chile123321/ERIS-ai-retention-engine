@@ -1,0 +1,10 @@
+split_version: "existing-v1"
+immutable: true
+development:
+  role: "EDA, cross-validation, tuning, calibration, and threshold selection"
+  expected_rows: 1176
+locked_final_test:
+  role: "one-time final evaluation only"
+  expected_rows: 294
+  prohibited_during_development: true
+  # Never read this split from development workflows.

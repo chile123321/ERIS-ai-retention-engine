@@ -1,0 +1,4 @@
+version: "v3-minimal"
+status: pending_owner_approval
+description: "Small, standardized, low-burden feature set."
+features: [] # TODO: do not infer this list.

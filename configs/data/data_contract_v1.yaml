@@ -1,0 +1,10 @@
+schema_version: "1.0.0"
+target:
+  name: Attrition
+  mapping: {No: 0, Yes: 1}
+identifiers:
+  excluded_from_model: true
+columns: [] # TODO: populate only from the approved audit/data dictionary.
+validation:
+  reject_unknown_target_values: true
+  logical_constraints: [] # TODO: add approved domain constraints.
