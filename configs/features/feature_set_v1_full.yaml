@@ -1,4 +1,51 @@
 version: "v1-full"
-status: pending_source_verification
-description: "Up to 25 approved IBM HR candidate features."
-features: [] # TODO: copy only after validating the authoritative workspace catalog.
+status: approved
+description: "Full 25-feature set for the IBM HR attrition benchmark."
+expected_feature_count: 25
+
+feature_groups:
+  nominal:
+    - BusinessTravel
+    - Department
+    - EducationField
+    - JobRole
+    - OverTime
+  ordinal:
+    - Education
+    - EnvironmentSatisfaction
+    - JobInvolvement
+    - JobLevel
+    - JobSatisfaction
+    - PerformanceRating
+    - RelationshipSatisfaction
+    - StockOptionLevel
+    - WorkLifeBalance
+  numeric:
+    - Age
+    - DistanceFromHome
+    - MonthlyIncome
+    - NumCompaniesWorked
+    - PercentSalaryHike
+    - TotalWorkingYears
+    - TrainingTimesLastYear
+    - YearsAtCompany
+    - YearsInCurrentRole
+    - YearsSinceLastPromotion
+    - YearsWithCurrManager
+
+non_features:
+  target:
+    - Attrition
+  identifiers:
+    - EmployeeNumber
+  provenance:
+    - source_row
+  excluded:
+    - Gender
+    - MaritalStatus
+    - DailyRate
+    - HourlyRate
+    - MonthlyRate
+    - EmployeeCount
+    - Over18
+    - StandardHours
