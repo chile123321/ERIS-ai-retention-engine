@@ -1,0 +1,45 @@
+policy_version: threshold-policy-v1
+model: xgboost_tuned_raw
+business_approved: false
+status: development_scenario_analysis
+
+selection_data:
+  type: cross_fitted_development
+  final_test_used: false
+
+capacity_scenarios:
+  - name: capacity_10_percent
+    max_alert_rate: 0.10
+    objective: maximize_recall
+    tie_breaker: maximize_precision
+  - name: capacity_15_percent
+    max_alert_rate: 0.15
+    objective: maximize_recall
+    tie_breaker: maximize_precision
+  - name: capacity_20_percent
+    max_alert_rate: 0.20
+    objective: maximize_recall
+    tie_breaker: maximize_precision
+  - name: capacity_25_percent
+    max_alert_rate: 0.25
+    objective: maximize_recall
+    tie_breaker: maximize_precision
+
+recall_scenarios:
+  - name: minimum_recall_60_percent
+    min_recall: 0.60
+    objective: minimize_alert_rate
+    tie_breaker: maximize_precision
+  - name: minimum_recall_70_percent
+    min_recall: 0.70
+    objective: minimize_alert_rate
+    tie_breaker: maximize_precision
+
+cost_sensitivity:
+  false_positive_cost: 1.0
+  false_negative_cost_ratios:
+    - 2.0
+    - 5.0
+    - 10.0
+
+default_threshold_reference: 0.5

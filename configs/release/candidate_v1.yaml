@@ -1,0 +1,177 @@
+manifest_version: candidate-freeze-v1
+candidate_name: eris-xgboost-v1
+candidate_version: v1
+created_at_utc: '2026-09-20T02:48:30+00:00'
+step_10_status: COMPLETE
+governance_decision: accepted_with_known_limitations
+scope:
+  capstone_research_prototype: true
+  capstone_evaluation: true
+  production: false
+  allowed_uses:
+  - academic_capstone_evaluation
+  - prototype_demonstration
+  - decision_support_research
+  - technical_integration_testing
+  prohibited_uses:
+  - production_hr_deployment
+  - automated_employment_decisions
+  - employee_termination_decisions
+  - promotion_salary_or_disciplinary_decisions
+  - claims_of_fairness_for_vietnamese_enterprises
+dataset:
+  name: IBM HR Attrition public/synthetic benchmark
+  version: ibm-hr-attrition-v1
+  raw_data_sha256: null
+  raw_data_hash_status: missing_from_approved_evidence
+  development_split_version: existing-v1
+  development_rows: 1176
+  development_target_distribution:
+    0: 986
+    1: 190
+feature_schema:
+  config: configs/features/feature_set_v1_full.yaml
+  version: v1-full
+  feature_count: 25
+preprocessing:
+  version: preprocessing-v1
+  implementation: src/eris_ml/features/preprocessing.py
+  nominal:
+    imputer: most_frequent
+    encoder: one_hot_handle_unknown_ignore
+  ordinal:
+    imputer: median
+    scaler: standard_scaler
+  numeric:
+    imputer: median
+    scaler: standard_scaler
+model:
+  family: xgboost
+  config: configs/models/xgboost_tuned_v1.yaml
+  parameters:
+    objective: binary:logistic
+    eval_metric: logloss
+    tree_method: hist
+    scale_pos_weight: 1.0
+    n_jobs: 1
+    subsample: 0.6
+    reg_lambda: 10.0
+    reg_alpha: 0.5
+    n_estimators: 500
+    min_child_weight: 3
+    max_depth: 1
+    learning_rate: 0.1
+    gamma: 0.5
+    colsample_bytree: 0.6
+calibration:
+  config: configs/models/xgboost_tuned_calibrated_v1.yaml
+  method: none
+  probability_type: raw
+threshold:
+  value: 0.345651
+  policy: capacity_15_percent
+  config: configs/threshold/threshold_candidates_v1.yaml
+  full_development_oof_candidate:
+    exact_threshold: 0.3456506431102752
+    expected_alert_rate: 0.14540816326530612
+    expected_precision: 0.6549707602339181
+    expected_recall: 0.5894736842105263
+  cross_fitted_policy_evaluation:
+    alert_rate: 0.14625850340136054
+    precision: 0.6453488372093024
+    recall: 0.5842105263157895
+    feasible_folds: 5
+random_seeds:
+  outer_cv: 42
+  inner_cv: 43
+library_versions:
+  python: 3.12.10
+  pandas: 3.0.6
+  scikit-learn: 1.9.1
+  xgboost: 3.4.1
+  numpy: 2.5.3
+  matplotlib: 3.11.2
+development_evidence:
+  pr_auc: 0.666912
+  roc_auc: 0.848004
+  brier: 0.088031
+fairness:
+  protocol: configs/evaluation/fairness_protocol_v1.yaml
+  status: review_known_limitation
+  production_fairness_approved: false
+  gender:
+    status: INSUFFICIENT_EVIDENCE
+    tpr_gap: 0.079
+    fpr_gap: 0.003
+    selection_rate_ratio: 0.999
+    tpr_gap_ci_95:
+    - 0.005
+    - 0.22
+  age_group:
+    status: REVIEW
+    tpr_gap: 0.517
+    fpr_gap: 0.112
+    equalized_odds_gap: 0.517
+    tpr_gap_ci_95:
+    - 0.33
+    - 0.758
+    tpr_18_29: 0.784
+    tpr_50_plus: 0.267
+  marital_status:
+    status: REVIEW_EXPLORATORY
+    tpr_gap: 0.328
+  intersectional:
+    status: INSUFFICIENT_EVIDENCE
+    female_50_plus_positive_count: 2
+holdout:
+  status: retained_with_protocol_deviation
+  final_test_file_opened: false
+  final_test_metrics_computed: false
+  final_test_used_for_model_selection: false
+  mixed_fairness_file_loaded_during_schema_inspection: true
+  incident_documented: true
+  incident_summary: The official locked final-test file was not opened and no final-test
+    metric was computed. A mixed fairness file containing final-test rows was inadvertently
+    loaded during schema inspection before the fairness audit. The workflow stopped
+    before analysis, the incident was documented, and no final-test information was
+    used to change the model, features, calibration or threshold.
+approvals:
+  capstone_evaluation_approved: true
+  business_approved: false
+  production_approved: false
+  final_test_evaluation_authorized: false
+artifact_hashes:
+  configs/features/feature_set_v1_full.yaml:
+    status: present
+    sha256: bd674ad6aa69921f8e04acdfa07c087a0c5d2e3ba1eb58715b5051829ec7d4ff
+  configs/models/xgboost_tuned_v1.yaml:
+    status: present
+    sha256: 67f3cf79721547a957cce07808b2eb01b71ebdf7d655be7a4dfc53ec2846ada1
+  configs/models/xgboost_tuned_calibrated_v1.yaml:
+    status: present
+    sha256: 37881dcf06d828260b31a6b42dba94e825bf7d2dacec69860638376d4e06a83b
+  configs/threshold/threshold_candidates_v1.yaml:
+    status: present
+    sha256: 8e8a6dc9045a2962666e5710c214a513891e161168e1e9e164c95ce1acbca621
+  configs/evaluation/fairness_protocol_v1.yaml:
+    status: present
+    sha256: 936716d478ab0f004ad84baa1df0de34520f7d072c55a3c8c633eaf5faf93fa8
+  data/processed/development_raw_v1.csv:
+    status: present
+    sha256: 5cb4c6a3226ab5e16b355af64163e5857aac0e1637eb2fb88f91fcc9f1989754
+  data/processed/fairness_audit_development_v1.csv:
+    status: present
+    sha256: 4d7cc140537d52a4408ab94494647bac9e89d388cc6d380ea5db8ab20de90498
+  artifacts/reports/hyperparameter_tuning_v1.md:
+    status: present
+    sha256: f32e3727a231ac73a3a34a6438e2bce3b8fd3bdc209686d8afe53801df7988d8
+  artifacts/reports/calibration_v1.md:
+    status: present
+    sha256: fb5c763db59e097880a43446d74e3ec82a26de514c4036bc08e9162d861124d5
+  artifacts/reports/threshold_selection_v1.md:
+    status: present
+    sha256: 4863e8ddc4120aeadbc65026a06bc8da0c0f3b9ba01d1618b53c71949b7d3317
+  artifacts/reports/fairness_audit_v1.md:
+    status: present
+    sha256: c165c4250562e010d3951134f8b6a6f94484ebb764c8e8f78db52f3a50cfb54c
+missing_artifacts: []

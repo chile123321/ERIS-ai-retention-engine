@@ -1,0 +1,35 @@
+{
+  "synthetic_low_signal": {
+    "record_id": "DEMO-LOW-001", "Age": 34, "BusinessTravel": "Travel_Rarely",
+    "Department": "Research & Development", "DistanceFromHome": 4, "Education": 3,
+    "EducationField": "Life Sciences", "EnvironmentSatisfaction": 4, "JobInvolvement": 3,
+    "JobLevel": 2, "JobRole": "Research Scientist", "JobSatisfaction": 4,
+    "MonthlyIncome": 6200, "NumCompaniesWorked": 2, "OverTime": "No",
+    "PercentSalaryHike": 15, "PerformanceRating": 3, "RelationshipSatisfaction": 3,
+    "StockOptionLevel": 1, "TotalWorkingYears": 10, "TrainingTimesLastYear": 3,
+    "WorkLifeBalance": 3, "YearsAtCompany": 6, "YearsInCurrentRole": 4,
+    "YearsSinceLastPromotion": 2, "YearsWithCurrManager": 4
+  },
+  "synthetic_medium_signal": {
+    "record_id": "DEMO-MED-001", "Age": 38, "BusinessTravel": "Travel_Frequently",
+    "Department": "Sales", "DistanceFromHome": 16, "Education": 3,
+    "EducationField": "Marketing", "EnvironmentSatisfaction": 2, "JobInvolvement": 2,
+    "JobLevel": 2, "JobRole": "Sales Executive", "JobSatisfaction": 2,
+    "MonthlyIncome": 5400, "NumCompaniesWorked": 4, "OverTime": "No",
+    "PercentSalaryHike": 13, "PerformanceRating": 3, "RelationshipSatisfaction": 2,
+    "StockOptionLevel": 0, "TotalWorkingYears": 12, "TrainingTimesLastYear": 2,
+    "WorkLifeBalance": 2, "YearsAtCompany": 4, "YearsInCurrentRole": 2,
+    "YearsSinceLastPromotion": 2, "YearsWithCurrManager": 2
+  },
+  "synthetic_high_signal": {
+    "record_id": "DEMO-HIGH-001", "Age": 27, "BusinessTravel": "Travel_Frequently",
+    "Department": "Sales", "DistanceFromHome": 24, "Education": 2,
+    "EducationField": "Marketing", "EnvironmentSatisfaction": 1, "JobInvolvement": 2,
+    "JobLevel": 1, "JobRole": "Sales Representative", "JobSatisfaction": 1,
+    "MonthlyIncome": 2600, "NumCompaniesWorked": 5, "OverTime": "Yes",
+    "PercentSalaryHike": 12, "PerformanceRating": 3, "RelationshipSatisfaction": 2,
+    "StockOptionLevel": 0, "TotalWorkingYears": 6, "TrainingTimesLastYear": 1,
+    "WorkLifeBalance": 1, "YearsAtCompany": 2, "YearsInCurrentRole": 1,
+    "YearsSinceLastPromotion": 1, "YearsWithCurrManager": 1
+  }
+}

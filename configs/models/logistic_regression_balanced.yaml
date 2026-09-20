@@ -1,0 +1,10 @@
+model: logistic_regression
+role: imbalance_candidate
+candidate_name: logistic_regression_balanced
+random_seed: 42
+
+parameters:
+  solver: liblinear
+  C: 1.0
+  max_iter: 2000
+  class_weight: balanced

@@ -1,4 +1,8 @@
 model: logistic_regression
 role: baseline
 random_seed: 42
-parameters: {} # TODO: define an approved search space.
+parameters:
+  solver: liblinear
+  C: 1.0
+  max_iter: 2000
+  class_weight: null

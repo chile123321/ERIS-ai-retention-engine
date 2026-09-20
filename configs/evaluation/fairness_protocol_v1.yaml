@@ -1,0 +1,41 @@
+protocol_version: fairness-protocol-v1
+model: xgboost_tuned_raw
+primary_policy: capacity_15_percent
+working_threshold: 0.345651
+business_approved: false
+production_approved: false
+final_test_used: false
+holdout_status: retained_with_protocol_deviation
+final_test_file_opened: false
+mixed_fairness_file_loaded_during_schema_inspection: true
+final_metrics_computed: false
+final_rows_used_for_model_decision: false
+
+audit_attributes:
+  primary: [Gender, AgeGroup]
+  exploratory: [MaritalStatus, Gender_AgeGroup]
+
+age_groups:
+  - {name: age_18_29, minimum: 18, maximum: 29}
+  - {name: age_30_39, minimum: 30, maximum: 39}
+  - {name: age_40_49, minimum: 40, maximum: 49}
+  - {name: age_50_plus, minimum: 50, maximum: null}
+
+minimum_support:
+  total_rows: 50
+  positive_rows: 10
+  negative_rows: 10
+
+bootstrap:
+  enabled: true
+  iterations: 2000
+  confidence_level: 0.95
+  random_state: 42
+
+screening_thresholds:
+  tpr_difference: 0.10
+  fpr_difference: 0.10
+  selection_rate_ratio: 0.80
+  calibration_gap_absolute: 0.05
+
+sensitivity_thresholds: [0.500000, 0.445293, 0.345651, 0.265658]

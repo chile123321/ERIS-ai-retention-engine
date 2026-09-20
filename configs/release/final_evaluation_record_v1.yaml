@@ -1,0 +1,18 @@
+evaluation_version: final-evaluation-v1
+candidate: eris-xgboost-v1
+maximum_runs: 1
+run_count: 1
+status: completed
+started_at_utc: '2026-09-20T03:12:48+00:00'
+completed_at_utc: '2026-09-20T03:13:35+00:00'
+final_test_sha256: dda26134190cd4001276b96612c6020ea5ec5cd3150435d786c0e6740a4c2750
+row_count: 294
+target_distribution:
+  0: 247
+  1: 47
+candidate_manifest_sha256: 33f0dc97a6082c5a22e4ec038386374dfb8effad6078ff003c4cb13cd9f10481
+threshold: 0.345651
+result: PASS_WITH_KNOWN_LIMITATIONS
+report_path: artifacts/reports/final_test_evaluation_v1.md
+metrics_path: artifacts/reports/final_test_metrics_v1.json
+predictions_path: artifacts/predictions/final_test_predictions_v1.csv

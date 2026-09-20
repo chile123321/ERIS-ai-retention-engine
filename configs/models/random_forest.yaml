@@ -1,3 +1,12 @@
 model: random_forest
+role: tree_baseline
 random_seed: 42
-parameters: {} # TODO: define an approved search space.
+
+parameters:
+  n_estimators: 500
+  max_depth: null
+  min_samples_split: 2
+  min_samples_leaf: 1
+  max_features: sqrt
+  class_weight: null
+  n_jobs: -1

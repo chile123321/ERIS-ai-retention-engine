@@ -1,0 +1,10 @@
+model: logistic_regression
+role: tuned_candidate
+candidate_name: logistic_regression_tuned_v1
+random_seed: 42
+parameters:
+  solver: liblinear
+  class_weight: null
+  max_iter: 3000
+  C: 0.3
+  penalty: l1

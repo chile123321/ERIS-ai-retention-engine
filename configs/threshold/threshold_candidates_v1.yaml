@@ -1,0 +1,102 @@
+model: xgboost_tuned_raw
+probability_source: artifacts/predictions/calibration_oof_v1.csv
+business_approved: false
+production_approved: false
+final_test_evaluated: false
+status: capstone_working_assumption
+scenario_analysis:
+- scenario: capacity_10_percent
+  threshold: 0.4452926516532898
+  expected_alert_rate: 0.09948979591836735
+  expected_recall: 0.4631578947368421
+  expected_precision: 0.7521367521367521
+- scenario: capacity_15_percent
+  threshold: 0.3456506431102752
+  expected_alert_rate: 0.14540816326530612
+  expected_recall: 0.5894736842105263
+  expected_precision: 0.6549707602339181
+- scenario: capacity_20_percent
+  threshold: 0.2656577229499817
+  expected_alert_rate: 0.19642857142857142
+  expected_recall: 0.6631578947368421
+  expected_precision: 0.5454545454545454
+- scenario: capacity_25_percent
+  threshold: 0.2191077321767807
+  expected_alert_rate: 0.24744897959183673
+  expected_recall: 0.7368421052631579
+  expected_precision: 0.48109965635738833
+- scenario: minimum_recall_60_percent
+  threshold: 0.3277067244052887
+  expected_alert_rate: 0.1564625850340136
+  expected_recall: 0.6
+  expected_precision: 0.6195652173913043
+- scenario: minimum_recall_70_percent
+  threshold: 0.2412045001983642
+  expected_alert_rate: 0.2227891156462585
+  expected_recall: 0.7
+  expected_precision: 0.5076335877862596
+- scenario: cost_fn_2x
+  threshold: 0.3456506431102752
+  expected_alert_rate: 0.14540816326530612
+  expected_recall: 0.5894736842105263
+  expected_precision: 0.6549707602339181
+- scenario: cost_fn_5x
+  threshold: 0.1787716597318649
+  expected_alert_rate: 0.29591836734693877
+  expected_recall: 0.7894736842105263
+  expected_precision: 0.43103448275862066
+- scenario: cost_fn_10x
+  threshold: 0.1787716597318649
+  expected_alert_rate: 0.29591836734693877
+  expected_recall: 0.7894736842105263
+  expected_precision: 0.43103448275862066
+candidates:
+- scenario: capacity_10_percent
+  threshold: 0.4452926516532898
+  expected_alert_rate: 0.09948979591836735
+  expected_precision: 0.7521367521367521
+  expected_recall: 0.4631578947368421
+  expected_fp: 29
+  expected_fn: 102
+  cross_fitted_alert_rate: 0.10034013605442177
+  cross_fitted_precision: 0.7542372881355932
+  cross_fitted_recall: 0.46842105263157896
+  cross_fitted_capacity_met: false
+  threshold_std: 0.009550564906892114
+  threshold_range:
+  - 0.4382656514644623
+  - 0.4600003659725189
+  feasible_folds: 5
+- scenario: capacity_15_percent
+  threshold: 0.3456506431102752
+  expected_alert_rate: 0.14540816326530612
+  expected_precision: 0.6549707602339181
+  expected_recall: 0.5894736842105263
+  expected_fp: 59
+  expected_fn: 78
+  cross_fitted_alert_rate: 0.14625850340136054
+  cross_fitted_precision: 0.6453488372093024
+  cross_fitted_recall: 0.5842105263157895
+  cross_fitted_capacity_met: true
+  threshold_std: 0.011414070857835251
+  threshold_range:
+  - 0.3327060043811798
+  - 0.35906746983528137
+  feasible_folds: 5
+- scenario: capacity_20_percent
+  threshold: 0.2656577229499817
+  expected_alert_rate: 0.19642857142857142
+  expected_precision: 0.5454545454545454
+  expected_recall: 0.6631578947368421
+  expected_fp: 105
+  expected_fn: 64
+  cross_fitted_alert_rate: 0.1879251700680272
+  cross_fitted_precision: 0.5610859728506787
+  cross_fitted_recall: 0.6526315789473685
+  cross_fitted_capacity_met: true
+  threshold_std: 0.008671407213972306
+  threshold_range:
+  - 0.2593430280685425
+  - 0.2835181951522827
+  feasible_folds: 5
+recommended_provisional_candidate: capacity_15_percent

@@ -1,0 +1,27 @@
+authorization_version: final-evaluation-authorization-v1
+authorized: true
+authorized_by: project_owner
+authorized_scope: capstone_final_evaluation
+authorized_candidate: eris-xgboost-v1
+maximum_runs: 1
+candidate_manifest:
+  path: configs/release/candidate_v1.yaml
+  sha256: 33f0dc97a6082c5a22e4ec038386374dfb8effad6078ff003c4cb13cd9f10481
+final_test:
+  path: data/processed/final_test_raw_v1.csv
+  access_allowed_after_preflight: true
+pre_registered_guardrails:
+  pr_auc_minimum: 0.45
+  roc_auc_minimum: 0.75
+  brier_maximum: 0.135462
+  precision_minimum: 0.45
+  recall_minimum: 0.45
+  alert_rate_maximum: 0.2
+restrictions:
+  tuning_allowed: false
+  calibration_allowed: false
+  threshold_change_allowed: false
+  feature_change_allowed: false
+  candidate_comparison_allowed: false
+  production_approval: false
+created_at_utc: '2026-09-20T03:11:42+00:00'

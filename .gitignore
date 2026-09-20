@@ -22,6 +22,7 @@ data/interim/*
 !data/interim/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+data/quarantine/*
 data/splits/*
 !data/splits/.gitkeep
 artifacts/models/*
@@ -30,3 +31,4 @@ artifacts/predictions/*
 !artifacts/predictions/.gitkeep
 artifacts/reports/*
 !artifacts/reports/.gitkeep
+artifacts/explainability/*

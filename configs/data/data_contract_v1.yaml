@@ -8,3 +8,33 @@ columns: [] # TODO: populate only from the approved audit/data dictionary.
 validation:
   reject_unknown_target_values: true
   logical_constraints: [] # TODO: add approved domain constraints.
+
+# Step 12B serving boundaries are descriptive IBM-development ranges, not HR policy.
+api_input:
+  contract_status: dataset_derived
+  hr_business_approved: false
+  production_approved: false
+  source: development_raw_v1_aggregate_only
+  feature_schema_version: v1-full
+  feature_count: 25
+  ordinal_domains_source: bundle_metadata
+  unknown_nominal: accept_with_warning
+  missing_values: reject_at_api
+  nominal_categories:
+    BusinessTravel: [Non-Travel, Travel_Frequently, Travel_Rarely]
+    Department: [Human Resources, Research & Development, Sales]
+    EducationField: [Human Resources, Life Sciences, Marketing, Medical, Other, Technical Degree]
+    JobRole: [Healthcare Representative, Human Resources, Laboratory Technician, Manager, Manufacturing Director, Research Director, Research Scientist, Sales Executive, Sales Representative]
+    OverTime: ["No", "Yes"]
+  numeric_safety_ranges:
+    Age: [18, 60]
+    DistanceFromHome: [1, 29]
+    MonthlyIncome: [1009, 19973]
+    NumCompaniesWorked: [0, 9]
+    PercentSalaryHike: [11, 25]
+    TotalWorkingYears: [0, 40]
+    TrainingTimesLastYear: [0, 6]
+    YearsAtCompany: [0, 37]
+    YearsInCurrentRole: [0, 17]
+    YearsSinceLastPromotion: [0, 15]
+    YearsWithCurrManager: [0, 17]

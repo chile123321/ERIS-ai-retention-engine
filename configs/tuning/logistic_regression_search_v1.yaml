@@ -1,0 +1,25 @@
+model: logistic_regression
+search_type: grid
+scoring: average_precision
+
+fixed_parameters:
+  solver: liblinear
+  class_weight: null
+  max_iter: 3000
+  random_state: 42
+
+search_space:
+  penalty:
+    - l1
+    - l2
+  C:
+    - 0.001
+    - 0.01
+    - 0.03
+    - 0.1
+    - 0.3
+    - 1.0
+    - 3.0
+    - 10.0
+    - 30.0
+    - 100.0

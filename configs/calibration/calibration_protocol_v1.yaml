@@ -1,0 +1,35 @@
+protocol_version: calibration-protocol-v1
+
+outer_cv:
+  type: StratifiedKFold
+  n_splits: 5
+  shuffle: true
+  random_state: 42
+
+calibration_cv:
+  type: StratifiedKFold
+  n_splits: 4
+  shuffle: true
+  random_state: 43
+
+methods:
+  - raw
+  - sigmoid
+  - isotonic
+
+primary_metric: brier_score
+secondary_metrics:
+  - log_loss
+  - expected_calibration_error
+  - pr_auc
+  - roc_auc
+
+calibration_bins:
+  count: 10
+  strategy: quantile
+
+operational_threshold: 0.5
+
+execution:
+  outer_parallelism: 1
+  estimator_n_jobs: 1

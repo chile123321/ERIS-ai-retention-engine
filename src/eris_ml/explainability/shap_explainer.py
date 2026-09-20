@@ -1,8 +1,10 @@
-"""SHAP integration interfaces; explanations are not causal evidence."""
+"""Compatibility interface for non-causal bundle-local SHAP explanations."""
 
 from typing import Any
 
+from eris_ml.models.bundle import ModelBundle
 
-def explain_predictions(model: Any, rows: Any) -> Any:
-    """Explain model behavior for supplied rows."""
-    raise NotImplementedError("SHAP explainability has not been implemented.")
+
+def explain_predictions(model: ModelBundle, rows: Any) -> list[dict[str, Any]]:
+    """Delegate to checked original-feature raw-log-odds explanations."""
+    return model.explain(rows)

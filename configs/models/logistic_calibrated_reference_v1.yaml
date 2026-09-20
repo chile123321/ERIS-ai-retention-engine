@@ -1,0 +1,12 @@
+model_version: logistic-calibrated-reference-v1
+base_model_config: configs/models/logistic_regression.yaml
+calibration:
+  method: none
+  cv_folds: 5
+  shuffle: true
+  random_state: 42
+  ensemble: true
+selection:
+  development_only: true
+  final_test_evaluated: false
+  production_approved: false
