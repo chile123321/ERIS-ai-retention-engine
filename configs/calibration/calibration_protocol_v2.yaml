@@ -1,0 +1,18 @@
+protocol_version: logistic-baseline-calibration-v2
+feature_sets: [v2_general_16, v2_no_department_17]
+base_config: configs/models/logistic_regression.yaml
+outer_assignment: artifacts/predictions/baseline_feature_ablation_v2_assignments.csv
+calibration_cv: {n_splits: 4, shuffle: true, random_state: 43}
+methods: [raw, sigmoid, isotonic]
+ensemble: false
+n_jobs: 1
+raw_regression: {rtol: 1.0e-7, atol: 1.0e-9}
+reliability: {bins: 10, strategy: quantile, low_count: 30, low_positives: 10}
+selection:
+  max_auc_drop: 0.005
+  minimum_improved_folds: {sigmoid: 3, isotonic: 4}
+  max_fold_brier_increase: 0.005
+  positive_brier_gain_after_leaving_any_fold_out: true
+  sigmoid_tie_tolerance: 0.0001
+final_test_used: false
+production_approved: false

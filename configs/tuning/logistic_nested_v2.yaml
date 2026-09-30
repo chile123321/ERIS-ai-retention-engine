@@ -1,0 +1,13 @@
+protocol_version: logistic-nested-v2
+feature_sets: [v2_general_16, v2_no_department_17]
+outer_assignment: artifacts/predictions/baseline_feature_ablation_v2_assignments.csv
+inner_cv: {n_splits: 4, shuffle: true, random_state: 43}
+search_config: configs/tuning/logistic_regression_search_v1.yaml
+selection_metric: average_precision
+tie_break:
+  absolute_tolerance: 1.0e-12
+  order: [smaller_C, l2_before_l1]
+execution: {outer_jobs: 1, search_jobs: 1}
+full_development_search: false
+final_test_used: false
+production_approved: false

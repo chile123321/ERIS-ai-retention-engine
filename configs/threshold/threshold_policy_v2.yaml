@@ -1,0 +1,23 @@
+protocol_version: logistic-raw-threshold-policy-v2
+feature_sets: [v2_general_16, v2_no_department_17]
+capacity_percent: [5, 10, 15]
+business_approved: false
+production_approved: false
+status: hypothetical_capacity_analysis
+base_config: configs/models/logistic_regression.yaml
+outer_assignment: artifacts/predictions/baseline_feature_ablation_v2_assignments.csv
+inner_cv: {n_splits: 4, shuffle: true, random_state: 43}
+threshold:
+  comparison: probability_greater_than_or_equal
+  candidates: unique_inner_probabilities_plus_0_1_and_no_alert_sentinel
+  no_alert_sentinel: nextafter_1_toward_positive_infinity
+  budget_rounding: floor_integer_percent_times_rows
+  selection_order: [maximize_recall, maximize_precision, maximize_threshold]
+top_k:
+  batch: each_outer_validation_fold
+  k_rounding: floor_integer_percent_times_rows
+  order: [probability_descending, source_row_ascending]
+reference_threshold: 0.5
+reviews_per_true_positive_when_tp_zero: undefined
+cost_assumptions: none
+final_test_used: false
