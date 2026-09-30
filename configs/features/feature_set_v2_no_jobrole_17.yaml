@@ -1,0 +1,48 @@
+version: "v2_no_jobrole_17"
+status: comparison_candidate
+description: "V2 comparison candidate excluding organization-specific JobRole."
+expected_feature_count: 17
+
+feature_groups:
+  nominal:
+    - Department
+    - OverTime
+  ordinal:
+    - Education
+    - EnvironmentSatisfaction
+    - JobInvolvement
+    - JobLevel
+    - JobSatisfaction
+    - PerformanceRating
+  numeric:
+    - Age
+    - DistanceFromHome
+    - MonthlyIncome
+    - TotalWorkingYears
+    - TrainingTimesLastYear
+    - YearsAtCompany
+    - YearsInCurrentRole
+    - YearsSinceLastPromotion
+    - YearsWithCurrManager
+
+non_features:
+  target: [Attrition]
+  identifiers: [EmployeeNumber]
+  provenance: [source_row]
+  excluded:
+    - JobRole
+    - BusinessTravel
+    - EducationField
+    - NumCompaniesWorked
+    - PercentSalaryHike
+    - RelationshipSatisfaction
+    - StockOptionLevel
+    - WorkLifeBalance
+    - Gender
+    - MaritalStatus
+    - DailyRate
+    - HourlyRate
+    - MonthlyRate
+    - EmployeeCount
+    - Over18
+    - StandardHours

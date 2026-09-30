@@ -18,9 +18,14 @@ endpoint, **Try it out**, and paste one object from
 [`manual_prediction_examples.json`](../tests/fixtures/manual_prediction_examples.json).
 The three examples are synthetic, within the dataset-derived input contract,
 and carry no expected Attrition label.
-Select **Authorize** and supply the runtime service token first. The token must
+Select **Authorize** and supply the bare runtime service token first, without
+typing the `Bearer ` prefix. Click **Authorize** in the dialog and then **Close**;
+Swagger's generated Curl must contain `Authorization: Bearer ...`. A missing
+header in generated Curl means the browser UI has not applied authorization to
+that operation, regardless of `/ready`. The token must
 be a unique 32+ character value in `ERIS_SERVICE_TOKEN`; the example placeholder
-is deliberately invalid. Never ship this credential to a browser or frontend.
+is deliberately invalid. Only use it in local Swagger for manual testing; never
+embed it in frontend code or a deployed browser app.
 Missing/invalid credentials return a generic 401 with `WWW-Authenticate: Bearer`.
 The API is unready if no valid token is configured. `/health` remains minimal and
 public. Do not place tokens in URL query parameters.

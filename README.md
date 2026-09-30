@@ -46,6 +46,37 @@ python scripts/train.py --help
 
 `configs/` contains versioned contracts and experiment configuration; `src/eris_ml/` contains production code; `scripts/` contains entry points; `notebooks/` is exploration-only; `tests/` contains automated checks; local data and generated artifacts live under `data/` and `artifacts/` and are ignored by Git.
 
+## Manual model testing on localhost
+
+```powershell
+.\scripts\start_manual_model_ui.ps1
+```
+
+The script opens <http://127.0.0.1:8501/> after its separate server is ready.
+It binds only to `127.0.0.1`, requires no API token, and uses the checked frozen
+bundle directly. Load a low/high synthetic example, change one of the 25
+features, and press Predict. This is research-only manual testing, not a
+production service or a substitute for the locked final-test evaluation. A few
+manually entered profiles cannot be used to calculate Accuracy. The production
+API still requires Bearer authentication. Press Ctrl+C to stop the local UI.
+
+## Manual model testing without API authentication
+
+```powershell
+.\scripts\manual_model_test.ps1
+```
+
+This local research tool loads the checked, frozen bundle directly and offers a
+25-feature guided menu. It does not start Uvicorn, call HTTP, test API
+authentication or require a service token. Use synthetic examples with
+`-Example low` or `-Example high`, a single JSON object with `-InputFile
+".\employee.json"`, and `-NoExplanation` to skip SHAP. `-JsonOutput` with a
+direct example or JSON input produces machine-readable output. Manual inputs and
+the synthetic examples do not replace the locked final-test evaluation, and a
+few predictions cannot measure Accuracy. The API below still requires Bearer
+service authentication; this tool does not change it. Do not use predictions for
+automated employment decisions.
+
 ## Local research API (Steps 12B–12C)
 
 The development-only `eris-xgboost-v1` bundle is available for local, research-only
@@ -60,9 +91,10 @@ In PowerShell, from the repository root:
 $env:ERIS_MODEL_BUNDLE_PATH="artifacts/models/eris_xgboost_v1.joblib"
 $env:ERIS_MODEL_METADATA_PATH="artifacts/models/eris_xgboost_v1.metadata.json"
 $env:ERIS_MODEL_CHECKSUM_PATH="artifacts/models/eris_xgboost_v1.sha256"
-# Supply a unique 32+ character credential in this shell only; never commit it.
-$secureServiceToken = Read-Host "Temporary local service token" -AsSecureString
-$env:ERIS_SERVICE_TOKEN = [System.Net.NetworkCredential]::new('', $secureServiceToken).Password
+# Generate a temporary token before starting Uvicorn. Never print or commit it.
+$token = ([guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N"))
+$env:ERIS_SERVICE_TOKEN = $token
+Set-Clipboard -Value $token
 .\.venv\Scripts\python.exe -m uvicorn eris_ml.api.main:app `
   --host 127.0.0.1 `
   --port 8000 --no-access-log
@@ -71,22 +103,35 @@ $env:ERIS_SERVICE_TOKEN = [System.Net.NetworkCredential]::new('', $secureService
 Open <http://127.0.0.1:8000/docs>, choose `POST /api/v1/predict`, select
 **Try it out**, paste `synthetic_low_signal` from
 [`tests/fixtures/manual_prediction_examples.json`](tests/fixtures/manual_prediction_examples.json),
-select **Authorize** and enter the temporary service token, then select
-**Execute**. Check `probability`, `threshold`, `alert`, and the top SHAP
-factors. SHAP values are raw log-odds contributions, not causal effects or
+select **Authorize**, paste the bare token (without `Bearer `), click **Authorize**
+inside the dialog, then **Close** and **Execute**. The generated Curl must include
+`Authorization: Bearer ...`. If it does not, the UI request is not authorized;
+reopen the dialog before debugging prediction input. Check `probability`,
+`threshold`, `alert`, and the top SHAP factors. SHAP values are raw log-odds
+contributions, not causal effects or
 percentage-point changes in risk. The three examples are synthetic demonstrations,
 not labelled evaluation cases.
 
-PowerShell request using the synthetic fixture (use a second shell and set the
-same temporary `ERIS_SERVICE_TOKEN` there):
+PowerShell request using the synthetic fixture (use a second shell while the
+clipboard still holds the token; copying another value overwrites it):
 
 ```powershell
+$token = [string](Get-Clipboard -Raw)
+$token = $token.TrimEnd("`r", "`n")
+if ($token -notmatch '^[0-9a-fA-F]{64}$') { throw 'Clipboard does not hold a 64-character token.' }
+$headers = @{ Authorization = "Bearer $token" }
 $examples = Get-Content tests/fixtures/manual_prediction_examples.json -Raw | ConvertFrom-Json
 $body = $examples.synthetic_low_signal | ConvertTo-Json -Depth 5
 Invoke-RestMethod -Uri http://127.0.0.1:8000/api/v1/predict `
   -Method Post -ContentType application/json -Body $body `
-  -Headers @{Authorization = "Bearer $env:ERIS_SERVICE_TOKEN"}
+  -Headers $headers
 ```
+
+`/ready` confirms only that a token is configured and the bundle is valid; it
+cannot confirm that a second shell or Swagger holds the same token. If a server
+was already using port 8000, stop that process you own before restarting, so
+requests do not reach an older app with a different token. Do not print the
+token or copy a JSON payload over it before the second shell reads it.
 
 `GET /health` is process liveness; `GET /ready` reports bundle readiness; and
 `GET /api/v1/model-info` exposes safe model metadata. The server loads the trusted,

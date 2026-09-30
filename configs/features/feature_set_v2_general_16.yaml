@@ -1,0 +1,50 @@
+version: "v2_general_16"
+status: preferred_candidate
+description: >-
+  Preferred generalizable v2 input; Department and JobRole may remain in the backend
+  but are prohibited from this model feature set.
+expected_feature_count: 16
+
+feature_groups:
+  nominal:
+    - OverTime
+  ordinal:
+    - Education
+    - EnvironmentSatisfaction
+    - JobInvolvement
+    - JobLevel
+    - JobSatisfaction
+    - PerformanceRating
+  numeric:
+    - Age
+    - DistanceFromHome
+    - MonthlyIncome
+    - TotalWorkingYears
+    - TrainingTimesLastYear
+    - YearsAtCompany
+    - YearsInCurrentRole
+    - YearsSinceLastPromotion
+    - YearsWithCurrManager
+
+non_features:
+  target: [Attrition]
+  identifiers: [EmployeeNumber]
+  provenance: [source_row]
+  excluded:
+    - Department
+    - JobRole
+    - BusinessTravel
+    - EducationField
+    - NumCompaniesWorked
+    - PercentSalaryHike
+    - RelationshipSatisfaction
+    - StockOptionLevel
+    - WorkLifeBalance
+    - Gender
+    - MaritalStatus
+    - DailyRate
+    - HourlyRate
+    - MonthlyRate
+    - EmployeeCount
+    - Over18
+    - StandardHours

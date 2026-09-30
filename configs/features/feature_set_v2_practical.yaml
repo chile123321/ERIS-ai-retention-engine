@@ -1,4 +1,35 @@
-version: "v2-practical"
-status: pending_owner_approval
-description: "Features collectable through the ERIS product schema."
-features: [] # TODO: do not infer this list.
+version: "v2-practical-matrix"
+status: feature_scope_approved_training_not_started
+description: "Registry for four approved v2 feature-set variants."
+source_dictionary: "../Documents/ERIS_Feature_Category_Dictionary_v2.xlsx"
+
+preferred_feature_set:
+  name: v2_general_16
+  config: configs/features/feature_set_v2_general_16.yaml
+  rationale: >-
+    Department and JobRole remain valid backend attributes but are excluded from the
+    preferred model input because their IBM categories are organization-specific and
+    cannot yet be mapped consistently across employers.
+
+comparison_feature_sets:
+  v2_full_18: configs/features/feature_set_v2_full_18.yaml
+  v2_no_department_17: configs/features/feature_set_v2_no_department_17.yaml
+  v2_no_jobrole_17: configs/features/feature_set_v2_no_jobrole_17.yaml
+  v2_general_16: configs/features/feature_set_v2_general_16.yaml
+
+comparison_protocol:
+  selection_data: development_only
+  split_version: existing-v1
+  immutable_split_fingerprints:
+    split_manifest_sha256: d019d05d95d997dd3e6f85983cadc3eb0547c8a9946c2a4d11ab08af1b92749b
+    development_sha256: 5cb4c6a3226ab5e16b355af64163e5857aac0e1637eb2fb88f91fcc9f1989754
+    development_rows: 1176
+    development_target_distribution: {0: 986, 1: 190}
+    final_test_rows_from_existing_record: 294
+    final_test_target_distribution_from_existing_record: {0: 247, 1: 47}
+  shared_outer_folds:
+    type: StratifiedKFold
+    n_splits: 5
+    shuffle: true
+    random_state: 42
+  final_test_used: false

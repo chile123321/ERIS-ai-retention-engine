@@ -1,8 +1,9 @@
 """Load and validate versioned feature-set definitions."""
 
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any
 
 import yaml
 
@@ -92,9 +93,11 @@ def load_feature_definition(path: Path) -> FeatureDefinition:
         raise FeatureDefinitionError("Feature definition must include a non-empty version.")
 
     configured_count = root.get("expected_feature_count")
-    if configured_count != 25:
+    if (not isinstance(configured_count, int) or isinstance(configured_count, bool)
+            or configured_count < 1):
         raise FeatureDefinitionError(
-            f"expected_feature_count must be 25, received {configured_count!r}."
+            "expected_feature_count must be a positive integer, "
+            f"received {configured_count!r}."
         )
 
     features = definition.all_features

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ERIS · Local model lab</title>
+  <style>
+    :root{font-family:Inter,Segoe UI,Arial,sans-serif;color:#1e3440;background:#f4f7f5}
+    *{box-sizing:border-box}body{margin:0}header{background:#123d48;color:#fff;padding:30px max(20px,calc((100vw - 1120px)/2));}
+    h1{font-size:2rem;margin:0 0 6px}header p{margin:0;color:#c8e4df}main{max-width:1120px;margin:24px auto;padding:0 18px 50px}
+    .banner{background:#e0f1e9;border-left:5px solid #238569;padding:14px 18px;border-radius:8px;margin-bottom:22px}
+    .meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:17px}.meta span{background:#236070;padding:6px 10px;border-radius:16px;font-size:.85rem}
+    .layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);gap:22px;align-items:start}
+    section{background:#fff;border:1px solid #d5e1df;border-radius:12px;box-shadow:0 4px 18px #123d4810;padding:22px}
+    h2{font-size:1.22rem;margin:0 0 4px}.sub{font-size:.9rem;color:#55727a;margin:0 0 20px}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}button{border:0;border-radius:7px;padding:10px 13px;font:inherit;cursor:pointer;background:#e5eeed;color:#123d48}
+    button:hover{filter:brightness(.94)}button.primary{background:#087e69;color:#fff;font-weight:700}button:disabled{opacity:.6;cursor:wait}
+    .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{min-width:0}
+    label{display:block;font-size:.9rem;font-weight:600;margin-bottom:5px}.technical{display:block;font-family:Consolas,monospace;font-weight:400;font-size:.76rem;color:#648087;overflow-wrap:anywhere}
+    input,select{width:100%;border:1px solid #a8bfbe;border-radius:6px;padding:9px;font:inherit;background:#fff;color:#173943}
+    input:focus,select:focus{outline:2px solid #3eab92;outline-offset:1px}.error{font-size:.78rem;color:#b62c37;min-height:1em;margin-top:3px}
+    .field.invalid input,.field.invalid select{border-color:#b62c37}.record{margin:18px 0}.hint{font-size:.75rem;color:#657c80}
+    .result-placeholder{color:#668087;margin:20px 0}.status{font-weight:700;font-size:1.1rem}.status.alert{color:#a83532}.status.no-alert{color:#167359}
+    .prob{font-size:2.2rem;font-weight:750;margin:8px 0;color:#0b665c}.kv{display:grid;grid-template-columns:1fr auto;gap:8px;border-top:1px solid #e0ebea;padding:8px 0;font-size:.9rem}
+    .factors{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:12px}.factors th,.factors td{border-bottom:1px solid #e0ebea;padding:8px 5px;text-align:left;overflow-wrap:anywhere}.factors th{color:#47656c}
+    .message{padding:10px;border-radius:6px;background:#fff3e9;color:#8b4330;margin:12px 0}.disclaimer{font-size:.79rem;color:#617b80;line-height:1.5}
+    @media(max-width:850px){.layout{grid-template-columns:1fr}}@media(max-width:570px){.fields{grid-template-columns:1fr}header{padding:25px 20px}}
+  </style>
+</head>
+<body>
+<header><h1>ERIS · Local model lab</h1><p>Thử hồ sơ synthetic hoặc nhập tay · research only · không phải quyết định nhân sự</p>
+  <div id="metadata" class="meta" aria-label="Model metadata"></div></header>
+<main><div class="banner">Chỉ dùng trên máy này. Đây là mô hình nghiên cứu chưa được phê duyệt sản xuất; không dùng vài hồ sơ thử tay để tính accuracy.</div>
+  <div class="layout"><section><h2>Thông tin nhân viên</h2><p class="sub">Đúng 25 feature của frozen bundle. Không nhập Attrition; record ID chỉ là metadata.</p>
+    <div class="toolbar"><button type="button" id="load-low">Load Low Example</button><button type="button" id="load-high">Load High Example</button><button type="button" id="reset">Reset</button></div>
+    <form id="prediction-form" novalidate><div id="fields" class="fields"></div>
+      <div class="record"><label for="record-id">Record ID <span class="technical">record_id · optional, not a model feature</span></label><input id="record-id" maxlength="64" autocomplete="off" placeholder="Auto-generated if empty"><div id="error-record_id" class="error"></div></div>
+      <button class="primary" type="submit" id="predict">Predict</button><div id="form-message" role="alert"></div>
+    </form></section>
+    <section aria-live="polite"><h2>Kết quả dự đoán</h2><p class="sub">Raw probability · threshold đã khóa trong bundle</p><div id="result" class="result-placeholder">Chọn một ví dụ hoặc nhập 25 giá trị rồi bấm Predict.</div></section></div>
+</main>
+<script>
+(() => {
+  'use strict';
+  const fieldsEl = document.getElementById('fields');
+  const metadataEl = document.getElementById('metadata');
+  const resultEl = document.getElementById('result');
+  const messageEl = document.getElementById('form-message');
+  let schema = null;
+  const create = (tag, text, className) => {const el=document.createElement(tag); if(text!==undefined) el.textContent=String(text); if(className) el.className=className; return el;};
+  const clearErrors = () => {document.querySelectorAll('.field.invalid').forEach(el=>el.classList.remove('invalid'));document.querySelectorAll('.error').forEach(el=>el.textContent='');messageEl.replaceChildren();};
+  function makeField(field) {
+    const box=create('div',undefined,'field'); box.dataset.field=field.name;
+    const label=create('label',field.label);label.htmlFor='feature-'+field.name;
+    label.append(create('span',field.name,'technical'));box.append(label);
+    let control;
+    if (field.options) {control=create('select');control.append(create('option','Choose a value'));control.options[0].value='';field.options.forEach(value=>{const option=create('option',value);option.value=String(value);control.append(option);});}
+    else {control=create('input');control.type='number';control.step='any';control.min=String(field.minimum);control.max=String(field.maximum);}
+    control.id='feature-'+field.name;control.name=field.name;control.required=true;box.append(control);
+    if(field.kind==='ordinal') box.append(create('span','Demo-coded levels; not an HR-approved rule.','hint'));
+    else if(field.kind==='numeric') box.append(create('span','Allowed demo range: '+field.minimum+'–'+field.maximum,'hint'));
+    const error=create('div',undefined,'error');error.id='error-'+field.name;box.append(error);return box;
+  }
+  function loadPayload(payload) {
+    clearErrors(); for(const field of schema.fields){const el=document.getElementById('feature-'+field.name);el.value=payload[field.name]===undefined?'':String(payload[field.name]);}
+    document.getElementById('record-id').value=payload.record_id||'';resultEl.textContent='Hồ sơ đã nạp. Bấm Predict để xem kết quả.';resultEl.className='result-placeholder';
+  }
+  async function example(signal){try{const response=await fetch('/examples/'+signal);if(!response.ok)throw Error();loadPayload(await response.json());}catch{showMessage('Could not load the synthetic example.');}}
+  function showMessage(text){messageEl.replaceChildren(create('div',text,'message'));}
+  function renderResult(data){resultEl.className='';resultEl.replaceChildren();
+    const status=create('div',data.alert?'Alert: Yes':'Alert: No','status '+(data.alert?'alert':'no-alert'));resultEl.append(status);
+    resultEl.append(create('div',(data.probability*100).toFixed(2)+'%','prob'));
+    const rows=[['Probability',data.probability.toFixed(8)],['Threshold',data.threshold.toFixed(6)],['Decision',data.decision_label],['Model version',data.candidate_version],['Bundle version',data.bundle_version],['Record ID',data.record_id],['Production approved',String(data.production_approved)]];
+    rows.forEach(([key,value])=>{const row=create('div',undefined,'kv');row.append(create('span',key),create('strong',value));resultEl.append(row);});
+    resultEl.append(create('h3','Top 5 SHAP factors'));
+    if(data.explanation_error){resultEl.append(create('div',data.explanation_error,'message'));}
+    else{const table=create('table',undefined,'factors');const head=create('tr');['Feature','Input value','Direction','SHAP value'].forEach(x=>head.append(create('th',x)));table.append(head);
+      data.top_factors.forEach(f=>{const row=create('tr');[f.feature,f.feature_value,f.direction,Number(f.shap_value).toFixed(6)].forEach(x=>row.append(create('td',x)));table.append(row);});resultEl.append(table);}
+    resultEl.append(create('p',data.shap_disclaimer,'disclaimer'));
+  }
+  function payloadFromForm(){const payload={};for(const field of schema.fields){const control=document.getElementById('feature-'+field.name);const raw=control.value;
+    if(!raw){document.getElementById('error-'+field.name).textContent='Required field.';control.parentElement.classList.add('invalid');continue;}
+    if(field.kind==='nominal')payload[field.name]=raw;else{const value=Number(raw);if(!Number.isFinite(value)){document.getElementById('error-'+field.name).textContent='Enter a finite number.';control.parentElement.classList.add('invalid');continue;}payload[field.name]=value;}}
+    const record=document.getElementById('record-id').value.trim();if(record)payload.record_id=record;return payload;}
+  document.getElementById('load-low').addEventListener('click',()=>example('low'));
+  document.getElementById('load-high').addEventListener('click',()=>example('high'));
+  document.getElementById('reset').addEventListener('click',()=>{document.getElementById('prediction-form').reset();clearErrors();resultEl.className='result-placeholder';resultEl.textContent='Form reset. Load an example or fill all 25 fields.';});
+  document.getElementById('prediction-form').addEventListener('submit',async event=>{event.preventDefault();clearErrors();const payload=payloadFromForm();if(document.querySelector('.field.invalid')){showMessage('Please complete all 25 fields.');return;}
+    const button=document.getElementById('predict');button.disabled=true;try{const response=await fetch('/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await response.json();
+      if(!response.ok){if(data.errors){Object.entries(data.errors).forEach(([name,text])=>{const error=document.getElementById('error-'+name);if(error){error.textContent=text;const box=error.closest('.field');if(box)box.classList.add('invalid');}});}showMessage(data.message||'Prediction failed.');return;}renderResult(data);
+    }catch{showMessage('Local prediction service is unavailable.');}finally{button.disabled=false;}});
+  fetch('/schema').then(response=>{if(!response.ok)throw Error();return response.json();}).then(data=>{schema=data;data.fields.forEach(field=>fieldsEl.append(makeField(field)));
+    [['Model',data.candidate_version],['Bundle',data.bundle_version],['Threshold',Number(data.threshold).toFixed(6)],['Probability',data.probability_type],['Research only','true'],['Production approved',String(data.production_approved)]].forEach(([key,value])=>metadataEl.append(create('span',key+': '+value)));
+  }).catch(()=>showMessage('Frozen bundle or feature schema unavailable.'));
+})();
+</script>
+</body>
+</html>

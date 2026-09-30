@@ -1,0 +1,48 @@
+version: "v2_full_18"
+status: comparison_candidate
+description: "All 18 approved v2 dictionary features; comparison reference only."
+expected_feature_count: 18
+
+feature_groups:
+  nominal:
+    - Department
+    - JobRole
+    - OverTime
+  ordinal:
+    - Education
+    - EnvironmentSatisfaction
+    - JobInvolvement
+    - JobLevel
+    - JobSatisfaction
+    - PerformanceRating
+  numeric:
+    - Age
+    - DistanceFromHome
+    - MonthlyIncome
+    - TotalWorkingYears
+    - TrainingTimesLastYear
+    - YearsAtCompany
+    - YearsInCurrentRole
+    - YearsSinceLastPromotion
+    - YearsWithCurrManager
+
+non_features:
+  target: [Attrition]
+  identifiers: [EmployeeNumber]
+  provenance: [source_row]
+  excluded:
+    - BusinessTravel
+    - EducationField
+    - NumCompaniesWorked
+    - PercentSalaryHike
+    - RelationshipSatisfaction
+    - StockOptionLevel
+    - WorkLifeBalance
+    - Gender
+    - MaritalStatus
+    - DailyRate
+    - HourlyRate
+    - MonthlyRate
+    - EmployeeCount
+    - Over18
+    - StandardHours

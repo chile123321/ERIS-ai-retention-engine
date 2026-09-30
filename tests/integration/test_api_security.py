@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+from secrets import token_hex
 from uuid import UUID, uuid4
 
 import pandas as pd
@@ -44,6 +45,60 @@ def test_fail_closed_without_auth_configuration() -> None:
         assert client.get("/api/v1/model-info").status_code == 401
         assert client.get("/metrics").status_code == 401
         assert app.state.load_count == 0
+
+
+def test_random_64_character_token_from_environment_and_no_settings_cache(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Exercise real Settings, Bearer parsing and routes without auth overrides."""
+    first_token = token_hex(32)
+    second_token = token_hex(32)
+    assert first_token != second_token
+    monkeypatch.setenv("ERIS_SERVICE_TOKEN", first_token)
+    first_app = create_app()
+    with TestClient(first_app) as client:
+        assert client.get("/health").status_code == 200
+        assert client.get("/ready").status_code == 200
+        assert client.get("/api/v1/model-info").status_code == 401
+        assert client.get("/api/v1/model-info", headers={
+            "Authorization": f"Bearer {first_token}",
+        }).status_code == 200
+        prediction = client.post("/api/v1/predict?include_explanation=false", headers={
+            "Authorization": f"Bearer {first_token}",
+        }, json=SYNTHETIC_EXAMPLE)
+        assert prediction.status_code == 200
+        assert prediction.json()["threshold"] == 0.345651
+        for malformed in (
+            "", "Bearer", "Bearer ", f"Basic {first_token}",
+            f"Bearer Bearer {first_token}", f"Bearer {second_token}",
+        ):
+            assert client.get("/api/v1/model-info", headers={
+                "Authorization": malformed,
+            }).status_code == 401
+
+        spec = client.get("/openapi.json").json()
+        scheme = spec["components"]["securitySchemes"]["ServiceBearer"]
+        assert scheme["type"] == "http" and scheme["scheme"] == "bearer"
+        for path, method in (
+            ("/api/v1/model-info", "get"), ("/api/v1/predict", "post"),
+            ("/api/v1/predict/batch", "post"), ("/metrics", "get"),
+        ):
+            assert {"ServiceBearer": []} in spec["paths"][path][method]["security"]
+        assert "security" not in spec["paths"]["/health"]["get"]
+
+    monkeypatch.setenv("ERIS_SERVICE_TOKEN", second_token)
+    second_app = create_app()
+    with TestClient(second_app) as client:
+        assert client.get("/ready").status_code == 200
+        assert client.get("/api/v1/model-info", headers={
+            "Authorization": f"Bearer {first_token}",
+        }).status_code == 401
+        assert client.get("/api/v1/model-info", headers={
+            "Authorization": f"Bearer {second_token}",
+        }).status_code == 200
+    assert first_app.state.settings is not second_app.state.settings
+    assert first_token not in caplog.text and second_token not in caplog.text
+    assert "MonthlyIncome" not in caplog.text
 
 
 def test_auth_tracing_monitoring_and_unchanged_prediction(

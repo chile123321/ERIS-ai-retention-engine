@@ -17,6 +17,7 @@ from eris_ml.api.schemas import (
     PredictionResponse,
 )
 from eris_ml.models.bundle import ModelBundle
+from eris_ml.models.inference import infer_records
 
 router = APIRouter(tags=["prediction"])
 DECISION_DISCLAIMER = (
@@ -57,7 +58,7 @@ def _results(records: list[PredictionRecord], request: Request, bundle: ModelBun
              *, include_explanation: bool, top_k: int) -> list[PredictionResponse]:
     features, warnings = _validated(records, request, bundle)
     try:
-        probability = bundle.predict_proba(features)
+        predictions = infer_records(bundle, features)
     except Exception:
         raise ApiError("PREDICTION_ERROR", "Prediction could not be completed.", 500) from None
     explanations: list[dict[str, Any]] | None = None
@@ -70,17 +71,16 @@ def _results(records: list[PredictionRecord], request: Request, bundle: ModelBun
             ) from None
     output: list[PredictionResponse] = []
     for index, record in enumerate(records):
-        score = float(probability[index])
-        alert = score >= 0.345651
+        prediction = predictions[index]
         factors = explanations[index]["top_factors"] if explanations is not None else []
         output.append(PredictionResponse(
             request_id=request.state.request_id, record_id=record.record_id,
             candidate_version=bundle.metadata["candidate_version"],
             bundle_version=bundle.metadata["bundle_version"],
             feature_schema_version=bundle.metadata["feature_schema_version"],
-            predicted_at_utc=datetime.now(UTC), probability=score,
-            threshold=0.345651, alert=alert,
-            decision_label="REVIEW_RECOMMENDED" if alert else "NO_REVIEW_ALERT",
+            predicted_at_utc=datetime.now(UTC), probability=prediction.probability,
+            threshold=prediction.threshold, alert=prediction.alert,
+            decision_label=prediction.decision_label,
             top_factors=factors,
             explanation_space="raw_log_odds" if explanations is not None else None,
             warnings=warnings[index], disclaimer=DECISION_DISCLAIMER,
