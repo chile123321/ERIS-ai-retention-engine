@@ -1,7 +1,7 @@
 """Reliability tables and predeclared guardrails for V2 Logistic calibration."""
 
 import json
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -32,14 +32,15 @@ def choose_method(summary: pd.DataFrame, folds: pd.DataFrame) -> tuple[str, pd.D
     """Same-feature pooled guards plus prespecified descriptive fold stability checks."""
     indexed = summary.set_index("method")
     fold_index = folds.set_index(["method", "fold"])
-    raw = indexed.loc["raw"]
+    raw = cast("pd.Series[float]", indexed.loc["raw"])
     criteria = PROTOCOL["selection"]
     records = []
     eligible = []
     for method in ("sigmoid", "isotonic"):
-        candidate = indexed.loc[method]
-        gains = np.array([fold_index.loc[("raw", fold), "brier_score"]
-                          - fold_index.loc[(method, fold), "brier_score"] for fold in range(1, 6)])
+        candidate = cast("pd.Series[float]", indexed.loc[method])
+        gains = np.array([cast(float, fold_index.loc[("raw", fold), "brier_score"])
+                          - cast(float, fold_index.loc[(method, fold), "brier_score"])
+                          for fold in range(1, 6)])
         improved = int((gains > 0).sum())
         failures = []
         if candidate.brier_score >= raw.brier_score:
@@ -63,7 +64,7 @@ def choose_method(summary: pd.DataFrame, folds: pd.DataFrame) -> tuple[str, pd.D
                         **{f"fold_{i + 1}_brier_gain": float(v) for i, v in enumerate(gains)}})
     selected = "raw"
     if eligible:
-        selected = min(eligible, key=lambda method: indexed.loc[method, "brier_score"])
+        selected = min(eligible, key=lambda method: cast(float, indexed.loc[method, "brier_score"]))
         if ("sigmoid" in eligible and indexed.loc["sigmoid", "brier_score"]
             <= indexed.loc[selected, "brier_score"] + criteria["sigmoid_tie_tolerance"]):
             selected = "sigmoid"
@@ -94,7 +95,7 @@ def summarize(oof: pd.DataFrame) -> dict[str, pd.DataFrame]:
                 local.append(record)
                 folds.append(record)
             for metric in METRICS:
-                values = [part[metric] for part in local]
+                values = [cast(float, part[metric]) for part in local]
                 summary[f"{metric}_mean"] = float(np.mean(values))
                 summary[f"{metric}_std"] = float(np.std(values, ddof=1))
             summaries.append(summary)

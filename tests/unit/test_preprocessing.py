@@ -121,7 +121,9 @@ def test_output_names_are_available_and_extra_columns_are_dropped(
         name in output_names
         for name in ["Attrition", "EmployeeNumber", "source_row", "unexpected_metadata"]
     )
-    assert not any(name.startswith(("nominal__", "ordinal__", "numeric__")) for name in output_names)
+    assert not any(
+        name.startswith(("nominal__", "ordinal__", "numeric__")) for name in output_names
+    )
 
 
 def test_fit_transform_does_not_mutate_input(definition, sample_frame) -> None:

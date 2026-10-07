@@ -1,0 +1,53 @@
+protocol_version: fairness-protocol-v2
+model: logistic_baseline
+probability_type: raw
+feature_sets: [v2_general_16, v2_no_department_17]
+policy: saved_top_k
+capacity_percent: [5, 10, 15]
+development_only: true
+business_approved: false
+production_approved: false
+final_test_used: false
+audit_attributes:
+  primary: [AgeGroup, Gender]
+  exploratory: [MaritalStatus]
+age_groups:
+  - {name: 18-29, minimum: 18, maximum: 29}
+  - {name: 30-39, minimum: 30, maximum: 39}
+  - {name: 40-49, minimum: 40, maximum: 49}
+  - {name: 50+, minimum: 50, maximum: null}
+domains:
+  Gender: [Female, Male]
+  MaritalStatus: [Divorced, Married, Single]
+missing_unknown: reject_before_metrics_no_imputation_or_row_dropping
+empty_fold_groups: emit_zero_counts_undefined_rates_insufficient_evidence
+minimum_support:
+  total_rows: 50
+  positive_rows: 10
+  negative_rows: 10
+precision_minimum_alerts: 10
+unsupported_metrics: undefined_performance_metrics_keep_counts_and_score_distribution
+metrics:
+  probability: [mean_probability, probability_std, p0, p10, p25, p50, p75, p90, p100, average_precision, roc_auc, brier]
+  operational: [n, positives, negatives, alerts, tp, fp, fn, tn, alert_rate, tpr, fpr, precision]
+undefined_metrics: null_with_explicit_denominators
+auc_one_class: undefined
+scopes: [pooled, fold_1, fold_2, fold_3, fold_4, fold_5]
+uncertainty:
+  method: wilson_binomial_descriptive_conditional_on_saved_predictions
+  confidence_level: 0.95
+  z: 1.959963984540054
+  fold_summary: mean_sample_sd_min_max_and_valid_fold_count
+  significance_claim: false
+screening_thresholds:
+  tpr_difference: 0.10
+  fpr_difference: 0.10
+  selection_rate_ratio: 0.80
+  calibration_gap_absolute: 0.05
+screening_interpretation: descriptive_human_review_only_not_fairness_or_legal_approval
+top_k_verification:
+  batch: saved_outer_validation_fold
+  k: floor_rows_times_percent_divided_by_100
+  tie_order: [probability_descending, source_row_ascending]
+  no_subgroup_reranking: true
+comparison_direction: no_department_17_minus_general_16

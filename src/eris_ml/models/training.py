@@ -1,7 +1,7 @@
 """Model-training orchestration interfaces."""
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -37,7 +37,7 @@ def build_model_pipeline(
 
 def train_model(pipeline: Pipeline, features: pd.DataFrame, target: pd.Series) -> Pipeline:
     """Fit and return a cloned pipeline without mutating the supplied estimator."""
-    fitted = clone(pipeline)
+    fitted = cast(Pipeline, clone(pipeline))
     fitted.fit(features, target)
     return fitted
 
@@ -90,7 +90,7 @@ def evaluate_baselines(
     if missing:
         raise ValueError(f"Development data is missing required columns: {missing}.")
 
-    features = development_data.loc[:, feature_definition.all_features].copy()
+    features = cast(pd.DataFrame, development_data.loc[:, feature_definition.all_features].copy())
     validate_feature_columns(features.columns, feature_definition)
     cv_config = evaluation_config.get("cross_validation")
     if not isinstance(cv_config, Mapping):

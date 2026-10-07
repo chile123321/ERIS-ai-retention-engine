@@ -1,0 +1,185 @@
+{
+  "read_only": true,
+  "final_test_accessed": false,
+  "scripts_imported": [
+    "baseline_ablation_v2",
+    "compare_baselines_v2",
+    "tune_logistic_v2",
+    "calibrate_v2",
+    "evaluate_threshold_policy_v2"
+  ],
+  "declared_outputs_present": 44,
+  "historical_output_hashes_match": 32,
+  "input_hash_entries": 109,
+  "historical_source_drift": {
+    "configs/features/feature_set_v2_practical.yaml": {
+      "current": "ef19d1038911b28edeffe3eb69647d00595dda18f79afdb5f95c0fc34720a81f",
+      "historical": "45dabe9e999ee5bbe346d7f29a7e82edbf71965f90f660b87bba7a58b5d877ec",
+      "traces": [
+        "baseline_ablation_v2",
+        "compare_baselines_v2",
+        "tune_logistic_v2",
+        "calibrate_v2",
+        "evaluate_threshold_policy_v2"
+      ]
+    },
+    "src/eris_ml/models/factory.py": {
+      "current": "734b72f0674d739eb0c21a78f2770141c2306e209673201da630f62a55d19872",
+      "historical": "da9faae9f0c3212a4af3b43abdd4aa97c26bfb922fe0d532982072bf864a76e9",
+      "traces": [
+        "baseline_ablation_v2",
+        "compare_baselines_v2",
+        "tune_logistic_v2",
+        "calibrate_v2",
+        "evaluate_threshold_policy_v2"
+      ]
+    },
+    "src/eris_ml/models/training.py": {
+      "current": "1eba48b4830f8aaecabc0c9c7531582939f0385c10fdea4a2097785f885cb00a",
+      "historical": "173fa855f543d43e2e33a8f9606f070691d376895e069f90167abe5c785afe4d",
+      "traces": [
+        "baseline_ablation_v2",
+        "compare_baselines_v2",
+        "tune_logistic_v2",
+        "calibrate_v2",
+        "evaluate_threshold_policy_v2"
+      ]
+    },
+    "src/eris_ml/evaluation/feature_ablation_reporting.py": {
+      "current": "9ae2f62da35a06dbdba07fe08da2313acc072d67606a6358a463d1fc456bb18a",
+      "historical": "a7ecc77926ac4ee2419a89a866b3ca4c59a06a8611ad3882addc4254d0322e80",
+      "traces": [
+        "baseline_ablation_v2"
+      ]
+    },
+    "src/eris_ml/evaluation/model_comparison.py": {
+      "current": "3aee14aad85a9830c4f3201a2e2d64813a5d7187e9ea17141e6eb4fbe5b24681",
+      "historical": "5e4409d59eaa37c7c727f22994d7207e85f508affa917f28bc0e58452b59f03b",
+      "traces": [
+        "compare_baselines_v2",
+        "tune_logistic_v2",
+        "calibrate_v2",
+        "evaluate_threshold_policy_v2"
+      ]
+    },
+    "src/eris_ml/evaluation/model_comparison_reporting.py": {
+      "current": "f207d928a380f615caa74e8d3a151091deab12b50b4bb637d2fefc6c97e43099",
+      "historical": "04ad4414f4d1db06c60d5ce7d59b389a6fda556b332541003f541a13f16665d5",
+      "traces": [
+        "compare_baselines_v2"
+      ]
+    },
+    "src/eris_ml/models/logistic_nested_v2.py": {
+      "current": "c8ee49f4f6b9014834c6dfb9f1d55bb870da451c629575db2070c969566c3651",
+      "historical": "c5bf2c5620d8f9bce4d0a63e469dfe1b8cfb4cefec01d25fac0a6b02290ed576",
+      "traces": [
+        "tune_logistic_v2"
+      ]
+    },
+    "src/eris_ml/models/tuning.py": {
+      "current": "b9ecb2023c9980551c63f46d82b40a7c3897a29bc9706f4f0fd06a7f407412d2",
+      "historical": "2d40e37d8e4dca4876f9333a367feb1f4b1ea65ac9f2b052f2697cbdc35b67f8",
+      "traces": [
+        "tune_logistic_v2"
+      ]
+    },
+    "src/eris_ml/evaluation/calibration_v2_reporting.py": {
+      "current": "3ac2d3ccb0bb5945e8954568ebe01f712ec6493ec2fb8a2fa2e44b4a79f8eeba",
+      "historical": "9d215c7e37d1b22fd0bdd79d9300b996f42dea44865ee3be697f67003517facf",
+      "traces": [
+        "calibrate_v2"
+      ]
+    },
+    "src/eris_ml/evaluation/threshold_policy_v2.py": {
+      "current": "ac6d9c1779553ef25ddfcffee4c8690b96fc12f54c2b4c172aacceaafbbb589d",
+      "historical": "4a097fe89d8eb2594e7606e887dd51f21bf572e9d70911c7f5a474a4a4c3b22b",
+      "traces": [
+        "evaluate_threshold_policy_v2"
+      ]
+    },
+    "src/eris_ml/evaluation/thresholding.py": {
+      "current": "e14318e012c18eb9c07bc1566775b3b87733790dbe75f88a2e93030c66fd7e23",
+      "historical": "12a051888dcfeec7e5c0680323439b058a4f4ba3f3e28338150031405363697a",
+      "traces": [
+        "evaluate_threshold_policy_v2"
+      ]
+    }
+  },
+  "feature_counts": {
+    "v2_full_18": 18,
+    "v2_no_department_17": 17,
+    "v2_no_jobrole_17": 17,
+    "v2_general_16": 16
+  },
+  "development_rows": 1176,
+  "target_distribution": {
+    "0": 986,
+    "1": 190
+  },
+  "assignment_rows": 1176,
+  "baseline_raw_alignment_max_difference": 0,
+  "typing_runtime_ast_equivalent": [
+    "src/eris_ml/data/fairness_recovery.py",
+    "src/eris_ml/evaluation/calibration_v2_reporting.py",
+    "src/eris_ml/evaluation/feature_ablation_reporting.py",
+    "src/eris_ml/evaluation/model_comparison.py",
+    "src/eris_ml/evaluation/model_comparison_reporting.py",
+    "src/eris_ml/evaluation/threshold_policy_v2.py",
+    "src/eris_ml/evaluation/thresholding.py",
+    "src/eris_ml/models/bundle.py",
+    "src/eris_ml/models/bundle_build.py",
+    "src/eris_ml/models/calibration.py",
+    "src/eris_ml/models/explainability.py",
+    "src/eris_ml/models/factory.py",
+    "src/eris_ml/models/logistic_nested_v2.py",
+    "src/eris_ml/models/training.py",
+    "src/eris_ml/models/tuning.py"
+  ],
+  "notebook_code_normalized_equivalent_outputs_metadata_unchanged": true,
+  "packages_only_in_old": [],
+  "packages_only_in_clean": [
+    "opentelemetry-api"
+  ],
+  "version_changes": {
+    "fastapi": {
+      "old": "0.141.1",
+      "clean": "0.142.2"
+    },
+    "librt": {
+      "old": "0.15.0",
+      "clean": "0.16.0"
+    },
+    "uvicorn": {
+      "old": "0.53.0",
+      "clean": "0.54.0"
+    },
+    "watchfiles": {
+      "old": "1.2.0",
+      "clean": "1.3.0"
+    },
+    "llvmlite": {
+      "old": "0.49.0",
+      "clean": "0.50.0"
+    },
+    "starlette": {
+      "old": "1.6.0",
+      "clean": "1.7.0"
+    },
+    "ruff": {
+      "old": "0.16.8",
+      "clean": "0.16.9"
+    },
+    "numba": {
+      "old": "0.67.0",
+      "clean": "0.68.0"
+    },
+    "fonttools": {
+      "old": "4.65.0",
+      "clean": "4.66.1"
+    },
+    "pyparsing": {
+      "old": "3.3.2",
+      "clean": "3.3.3"
+    }
+  }
+}

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -25,7 +26,7 @@ def _run_wrapper(*args: str, input_text: str | None = None) -> subprocess.Comple
     env["PYTHONIOENCODING"] = "utf-8"
     return subprocess.run(
         ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
-         str(WRAPPER), *args],
+         str(WRAPPER), "-PythonExecutable", sys.executable, *args],
         input=input_text, cwd=ROOT, env=env, text=True, encoding="utf-8",
         capture_output=True, timeout=45, check=False,
     )

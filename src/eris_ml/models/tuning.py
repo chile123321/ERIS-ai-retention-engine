@@ -5,7 +5,7 @@ from collections import Counter
 from collections.abc import Callable, Mapping
 from pathlib import Path
 from time import perf_counter
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -341,7 +341,7 @@ def run_nested_cv(
         y_validation = labels[validation_indices]
         for family in FAMILIES:
             if progress is not None:
-                progress(f"Outer fold {fold}/{outer.n_splits}: {family} baseline")
+                progress(f"Outer fold {fold}/{outer.get_n_splits()}: {family} baseline")
             baseline = build_model_pipeline(
                 feature_definition, create_estimator(baseline_configs[family])
             )
@@ -358,7 +358,7 @@ def run_nested_cv(
             del baseline
 
             if progress is not None:
-                progress(f"Outer fold {fold}/{outer.n_splits}: {family} inner search")
+                progress(f"Outer fold {fold}/{outer.get_n_splits()}: {family} inner search")
             search = build_search(feature_definition, search_configs[family], protocol)
             started = perf_counter()
             search.fit(x_train, y_train)
@@ -368,7 +368,8 @@ def run_nested_cv(
             }
             name = "logistic_tuned" if family == "logistic_regression" else "xgboost_tuned"
             record, probabilities = _fold_record(
-                search.best_estimator_, x_train, y_train, x_validation, y_validation,
+                cast(Pipeline, search.best_estimator_),
+                x_train, y_train, x_validation, y_validation,
                 fold, 0.0, search_time, float(search.refit_time_),
                 float(search.best_score_), best_parameters, threshold,
             )

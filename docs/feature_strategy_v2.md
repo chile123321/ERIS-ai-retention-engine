@@ -1,7 +1,8 @@
 # ERIS model v2 feature decision
 
-Status: feature scope locked; fixed-baseline ablation completed on 2026-09-30.
-Results and the next comparison are recorded in `docs/baseline_feature_ablation_v2.md`.
+Status: feature scope locked; development experiments and fairness audit completed;
+the HR decision package is prepared, with no HR or production approval. See
+[V2 status](v2_status.md) for the current quality gate and pending work.
 
 ## Decision
 
@@ -13,13 +14,35 @@ variants are registered under `configs/features/`:
 | `v2_full_18` | 18 | Yes | Yes | comparison reference |
 | `v2_no_department_17` | 17 | No | Yes | ablation comparison |
 | `v2_no_jobrole_17` | 17 | Yes | No | ablation comparison |
-| `v2_general_16` | 16 | No | No | preferred deployment candidate |
+| `v2_general_16` | 16 | No | No | portability-motivated working candidate |
 
 `v2_general_16` is preferred because the IBM `Department` and `JobRole`
 taxonomies are tied to one organization and do not yet have a stable,
 versioned cross-employer mapping. ERIS may store both fields for HR operations,
 but the 16-feature model config lists them as excluded and its preprocessing
 pipeline receives neither field.
+
+The current working candidate is Logistic **baseline raw `v2_general_16`**, with
+`v2_no_department_17` as
+the JobRole comparator. Nested-tuned Logistic was not retained; calibration
+retained raw for both sets. Capacity policies at 5%/10%/15% are hypothetical,
+and the HR decision fields remain unconfirmed. Evidence in sequence:
+
+1. [Baseline feature ablation](baseline_feature_ablation_v2.md).
+2. [Three-model baseline comparison](baseline_model_comparison_v2.md).
+3. [Logistic nested tuning](logistic_nested_v2.md).
+4. [Cross-fitted calibration](calibration_v2.md).
+5. [Threshold/top-k policy evaluation](threshold_policy_v2.md).
+6. [HR decision package](hr_policy_decision_package_v2.md).
+7. [Completed fairness/subgroup audit](fairness_v2.md), incorporated into the HR package.
+
+Their "next step" sections describe the state at each experiment, not the current
+roadmap. Next is HR confirmation or explicit confirmation of a capstone simulation;
+`general_16` plus top-k 10% remains a proposal, not an approved policy.
+Existing API/manual UI remain V1 with 25 features. A separately authorized
+Logistic general_16 research/demo bundle has been fit on development, with raw
+probabilities only; see [current status](v2_status.md#researchdemo-final-fit--2026-10-07).
+It is not a V2 serving integration, API, model card or approved production policy.
 
 The 18 dictionary features are:
 
@@ -40,6 +63,9 @@ development split uses integer `0`/`1` through the existing mapping.
 The workbook `ERIS_Feature_Category_Dictionary_v2.xlsx` distinguishes IBM
 reference values from proposed future ERIS collection. The following items are
 not semantically equivalent yet and must remain versioned assumptions:
+
+Workbook provenance, external provisioning and SHA-256 verification are documented
+in [V2 status](v2_status.md#dictionary-provenance); the workbook is not a Git asset.
 
 | Area | Available in IBM/development | Proposed ERIS rule | Decision still needed |
 |---|---|---|---|
@@ -76,18 +102,24 @@ decision-log entry 0005 record one authorized academic evaluation on 294 rows
 (`{0: 247, 1: 47}`), completed on 2026-09-20. This feature-lock step did not
 open that CSV. The v1 result cannot select or validate any v2 variant.
 
-## What must be rerun for v2
+## V2-specific evaluation and remaining work
 
 The split, fold protocol, target normalization, leakage-safe pipeline structure,
 metric implementations, and model factories can be reused. Starting from the
-four-way baseline comparison, v2 must regenerate OOF predictions and rerun model
-comparison, any chosen hyperparameter tuning, calibration assessment, business
-threshold selection, subgroup/fairness audit, candidate freeze, model card, and
-bundle/API contract for the ultimately selected schema. V1 probabilities,
+four-way baseline comparison, V2 regenerated its own OOF predictions and completed
+model comparison, Logistic tuning, calibration assessment and hypothetical policy
+evaluation, followed by development-only subgroup/fairness auditing. Still pending
+are HR or explicit capstone scenario confirmation and finalization of the existing
+enterprise data-contract work. The current user separately authorized an IBM-coded
+research/demo final fit and bundle for general_16; this does not settle those
+business decisions or approve a production candidate. Stop and notify the project
+owner before any API/backend design
+or changes; await separate instructions. V1 probabilities,
 preprocessor fits, tuned parameters, calibration/threshold decisions, SHAP
 values, fairness results, bundle and final-test metrics are not transferable to
 the changed feature set.
 
 No tuning, calibration, threshold selection, model fitting, or final-test access
 was performed during the initial feature-lock step. The subsequent fixed-baseline
-development-only run is documented separately above.
+development-only runs are documented separately above. No experimental metrics
+were revised by the repository consistency update.

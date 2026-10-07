@@ -2,13 +2,14 @@
 
 import json
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
-from sklearn.base import BaseEstimator, clone
+from sklearn.base import clone
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import StratifiedKFold
+from sklearn.pipeline import Pipeline
 
 from eris_ml.features.definitions import FeatureDefinition, validate_feature_columns
 from eris_ml.models.factory import _load_xgb_classifier, create_estimator
@@ -166,7 +167,9 @@ def validate_prior_oof(
     return assignments
 
 
-def _positive_probability(estimator: BaseEstimator, features: pd.DataFrame) -> np.ndarray:
+def _positive_probability(
+    estimator: Pipeline | CalibratedClassifierCV, features: pd.DataFrame,
+) -> np.ndarray:
     classes = np.asarray(estimator.classes_)
     positive = np.flatnonzero(classes == 1)
     if len(positive) != 1:
@@ -221,7 +224,7 @@ def run_cross_fitted_calibration(
     }
     if set(frame.columns) != required:
         raise ValueError("Development frame columns differ from the approved feature set.")
-    features = frame.loc[:, feature_definition.all_features].copy()
+    features = cast(pd.DataFrame, frame.loc[:, feature_definition.all_features].copy())
     validate_feature_columns(features.columns, feature_definition)
     target = normalize_binary_target(frame["Attrition"])
     labels = target.to_numpy()
@@ -246,7 +249,9 @@ def run_cross_fitted_calibration(
         }
         for model, estimator in estimators.items():
             if progress is not None:
-                progress(f"Outer fold {fold}/{splitter.n_splits}: {model} raw/sigmoid/isotonic")
+                progress(
+                    f"Outer fold {fold}/{splitter.get_n_splits()}: {model} raw/sigmoid/isotonic"
+                )
             base = build_model_pipeline(feature_definition, estimator)
             raw = _positive_probability(clone(base).fit(x_train, y_train), x_validation)
             reference_column = (

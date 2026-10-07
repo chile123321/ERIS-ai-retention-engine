@@ -1,7 +1,7 @@
 """Cross-fitted capacity policies for fixed raw Logistic baselines, no new model selection."""
 
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -261,7 +261,7 @@ def summarize(oof: pd.DataFrame, selections: pd.DataFrame) -> dict[str, pd.DataF
         local = []
         for fold, part in rows.groupby("fold"):
             metrics = operational(part.Attrition.to_numpy(), part.prediction.to_numpy())
-            allowed = budget(len(part), percent) if percent else len(part)
+            allowed = budget(len(part), cast(int, percent)) if percent else len(part)
             record = {
                 "feature_set": feature,
                 "policy": policy,

@@ -4,6 +4,15 @@
 feature set hay ngưỡng production. Tài liệu chỉ chứa số liệu tổng hợp, không có
 định danh hoặc danh sách nhân viên.
 
+AI chỉ hỗ trợ HR xem xét nguy cơ nghỉ việc và ưu tiên hỗ trợ/can thiệp; quyết định
+nhân sự do con người chịu trách nhiệm. Cảnh báo không phải kết luận về một cá nhân,
+không tự động kích hoạt quyết định bất lợi hoặc thay thế việc kiểm tra bối cảnh.
+V2 đã hoàn tất các thử nghiệm development và fairness audit. Theo yêu cầu riêng,
+đã fit/đóng gói Logistic raw general_16 thành **research/demo candidate theo mã hóa
+IBM**; xem [trạng thái](v2_status.md#researchdemo-final-fit--2026-10-07). Đây không
+phải xác nhận policy HR, data contract doanh nghiệp hay production. Chưa có API V2;
+các ô quyết định dưới đây vẫn để trống.
+
 ## 1. Hai lựa chọn đầu vào
 
 | Lựa chọn | Ý nghĩa với HR | Điểm cần cân nhắc |
@@ -24,20 +33,27 @@ sẽ nghỉ trong 3–6 tháng, hoặc có thể can thiệp trước một thá
 
 Top-k chọn những người có điểm cao nhất trong mỗi nhóm đánh giá:
 
-| Năng lực giả định | Bộ | Người cần xem | TP | FP | Bỏ sót (FN) |
-|---|---|---:|---:|---:|---:|
-| 5% | 16 | 55 | 35 | 20 | 155 |
-| 5% | 17 | 55 | 41 | 14 | 149 |
-| 10% | 16 | 115 | 67 | 48 | 123 |
-| 10% | 17 | 115 | 67 | 48 | 123 |
-| 15% | 16 | 175 | 84 | 91 | 106 |
-| 15% | 17 | 175 | 90 | 85 | 100 |
+| Năng lực giả định | Bộ | Cảnh báo/lượt xem | TP | FP | FN | Precision | Recall | Lượt xem/TP |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| 5% | 16 | 55 | 35 | 20 | 155 | 63,64% | 18,42% | 1,571 |
+| 5% | 17 | 55 | 41 | 14 | 149 | 74,55% | 21,58% | 1,341 |
+| 10% | 16 | 115 | 67 | 48 | 123 | 58,26% | 35,26% | 1,716 |
+| 10% | 17 | 115 | 67 | 48 | 123 | 58,26% | 35,26% | 1,716 |
+| 15% | 16 | 175 | 84 | 91 | 106 | 48,00% | 44,21% | 2,083 |
+| 15% | 17 | 175 | 90 | 85 | 100 | 51,43% | 47,37% | 1,944 |
+
+Precision = TP/cảnh báo; recall = TP/190; lượt xem/TP = cảnh báo/TP
+(nếu TP=0 thì `undefined`, không phải 0). Đây là tỷ số tổng lượt xem trên tổng
+nhãn dương được phát hiện, không phải thời gian xử lý hoặc lợi ích can thiệp.
 
 Các tổng trên cộng từ năm nhóm kiểm tra kỹ thuật, mỗi nhóm có 235 hoặc 236 dòng.
 Số cần xem được làm tròn xuống riêng từng nhóm: `k=floor(số người × tỷ lệ)`.
 Vì vậy tổng 55/115/175 không phải lấy tỷ lệ rồi làm tròn trên toàn bộ 1.176 dòng.
 **Các outer CV folds không tự động đại diện cho quy mô, lịch hay thành phần một
 đợt làm việc thực tế của HR.** Không lấy 115 làm năng lực HR đã được xác nhận.
+**115 cảnh báo ở 10% là tổng của năm outer-validation folds**, không phải dự báo
+số nhân viên HR sẽ xem trong một tháng tại doanh nghiệp mới. Mỗi dòng được xem
+ở đúng một fold; một đợt doanh nghiệp mới phải được định nghĩa riêng trước khi xếp hạng.
 
 Ở cùng số lượt xem, bộ 17 phát hiện thêm ròng 6/0/6 nhãn dương tính tại mức
 5%/10%/15%. Lợi ích này phải cân nhắc với chi phí và độ tin cậy của ánh xạ chức danh.
@@ -73,40 +89,108 @@ Trong kiểm tra kỹ thuật, top-k không vượt ngân sách ở bất kỳ f
 từ inner CV vượt ngân sách ở 3/1/2 folds của bộ 16 và 3/2/2 folds của bộ 17,
 tương ứng 5%/10%/15%; không chỉnh lại ngưỡng theo kết quả nhóm kiểm tra.
 
-Quy tắc hòa hiện tại: top-k ưu tiên mã dòng kỹ thuật tăng dần khi điểm bằng nhau;
+Quy tắc hòa hiện tại: top-k ưu tiên `source_row` tăng dần khi điểm bằng nhau;
 ngưỡng chọn tất cả người có điểm bằng ngưỡng. Mã dòng chỉ giúp tái lập thử nghiệm,
 không phải lý do nghiệp vụ để ưu tiên ai. HR cần xác nhận hoặc yêu cầu quy tắc khác;
 nếu thay đổi phải đánh giá lại trước khi triển khai. Mốc 0,5 chỉ là tham chiếu.
+`source_row` không phải ID nhân viên cho hệ thống thật. Cần xác nhận một ID ổn định,
+duy nhất trong phạm vi đợt, nguồn cấp ID và thứ tự so sánh khi hòa điểm; ID không
+là feature. **Chưa giả định backend có sẵn ID hoặc cấu trúc batch phù hợp.**
 
-## 5. Phiếu cần HR xác nhận
+## 5. Fairness ảnh hưởng thế nào đến quyết định?
+
+Nguồn: [tóm tắt fairness](fairness_v2.md) và
+[report kỹ thuật](../artifacts/reports/fairness_v2.md). Đây là kết quả trên nhãn IBM,
+không phải bằng chứng fairness ở doanh nghiệp Việt Nam hay hiệu quả can thiệp.
+Age đã là feature của cả hai bộ; AgeGroup là nhóm audit. Gender và MaritalStatus
+chỉ phục vụ audit, không bổ sung vào model. MaritalStatus là phân tích thăm dò.
+
+Minimum support đã khóa: n≥50, dương≥10, âm≥10; precision cần thêm ≥10 cảnh báo.
+Metric thiếu hỗ trợ ghi `undefined`, không thay bằng 0 và không coi là “không có
+chênh lệch”. Đủ minimum support cũng không phải chứng nhận fairness.
+
+**Tuổi, tại top-k 15%:** ở cả hai bộ, nhóm 18–29 có n=258, dương=74, âm=184,
+TP=49 (TPR 66,2%); nhóm 50+ có n=139, dương=15, âm=124, TP=2 (TPR 13,3%).
+Gap TPR là **52,9 điểm phần trăm**. Nhóm 50+ chỉ có 2–5 ca dương mỗi fold và
+**0/5 folds đủ minimum support**; nhóm 18–29 đủ ở 2/5 folds. Không diễn giải
+gap pooled này là ước lượng ổn định qua folds hoặc kết luận nguyên nhân.
+
+**MaritalStatus, tại top-k 10%:** cùng tổng 67 TP nhưng nhóm được phát hiện thay đổi.
+
+| Nhóm | n | Dương | Âm | TP bộ 16 | TP bộ 17 | TPR 16 / 17 | Fold đủ hỗ trợ |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Divorced | 263 | 29 | 234 | 11 | 13 | 37,9% / 44,8% | 0/5 |
+| Married | 540 | 66 | 474 | 21 | 15 | 31,8% / 22,7% | 5/5 |
+| Single | 373 | 95 | 278 | 35 | 39 | 36,8% / 41,1% | 5/5 |
+
+Bộ 17 thêm 2 TP Divorced và 4 TP Single nhưng mất 6 TP Married. Divorced chỉ
+có 2–9 ca dương mỗi fold; gap TPR/FPR đầy đủ giữa các nhóm MaritalStatus theo
+fold không đủ hỗ trợ để tổng hợp. Không suy diễn tổng TP bằng nhau thành tác động
+giống nhau lên các nhóm, hoặc suy diễn chênh lệch pooled thành bằng chứng chắc chắn.
+
+**Gender:** tại 15%, gap TPR pooled giảm từ 10,4 xuống 3,1 điểm phần trăm ở
+bộ 17, nhưng gap theo fold vẫn biến động; việc này không xóa các vấn đề theo tuổi
+hoặc tình trạng hôn nhân. Chi tiết số hỗ trợ và biến động nằm trong report fairness.
+
+Không tuyên bố bộ 16 hay 17 “đạt fairness”; không tự thêm quota theo nhóm, đổi
+ngân sách, hòa điểm, feature hoặc policy từ kết quả audit. Người xác nhận cần
+ghi nhận các hạn chế này cùng lựa chọn, không chỉ chọn theo tổng TP hoặc một gap.
+
+## 6. Phiếu quyết định cho HR/chủ dự án
 
 Các ô dưới để trống có chủ ý; không được suy diễn là đã đồng ý.
 
 | Nội dung cần xác nhận | Câu trả lời/lý do | Trạng thái quyết định | Người xác nhận | Ngày xác nhận |
 |---|---|---|---|---|
-| Một đợt diễn ra bao lâu; gồm nhân viên nào, tại thời điểm dữ liệu nào; xử lý người đã được cảnh báo trước đó ra sao? | | | | |
-| HR thực sự xem được tối đa bao nhiêu người mỗi đợt; giới hạn là số tuyệt đối hay tỷ lệ? | | | | |
-| Ưu tiên top-k hay ngưỡng xác suất, vì sao; chấp nhận bỏ sót và cảnh báo nhầm đến mức nào? | | | | |
-| Có chấp nhận cách làm tròn và quy tắc hòa điểm; nếu không, thay bằng quy tắc nào? | | | | |
-| Có thể chuẩn hóa JobRole đáng tin cậy tại các công ty mục tiêu không; ai quản lý ánh xạ; chọn bộ 16 hay 17? | | | | |
-| Sau cảnh báo, ai tiếp nhận, sẽ làm gì, trong bao lâu; ghi nhận hành động, phản hồi và kết quả can thiệp ra sao? | | | | |
+| Phạm vi quyết định: sử dụng với HR thực tế hay chỉ mô phỏng đồ án; ai có thẩm quyền xác nhận phạm vi đó? | | | | |
+| Một đợt gồm những nhân viên nào, tần suất bao lâu; điều kiện tham gia/loại trừ và xử lý cảnh báo lặp qua nhiều đợt? | | | | |
+| Thời điểm chốt danh sách và snapshot dữ liệu mỗi đợt; xử lý bản ghi đến muộn hoặc sửa sau thời điểm chốt? | | | | |
+| Năng lực HR thực tế: tối đa bao nhiêu lượt/người xem mỗi đợt, ai xử lý và trong bao lâu; nếu chỉ mô phỏng, giả định là gì? | | | | |
+| Chọn top-k hay ngưỡng xác suất và lý do; chấp nhận bỏ sót/cảnh báo nhầm ra sao? | | | | |
+| Capacity được chọn là số tuyệt đối hay tỷ lệ, giá trị bao nhiêu; xử lý quá tải hoặc đợt ít người thế nào? | | | | |
+| Quy tắc làm tròn k: có chấp nhận floor(n×capacity), kể cả k=0 ở đợt nhỏ, hay yêu cầu quy tắc khác? | | | | |
+| Hòa điểm: ID ổn định nào, ai cấp/kiểm tra tính duy nhất và thứ tự so sánh; có chấp nhận thứ tự đó không? Không mặc định dùng source_row ngoài IBM. | | | | |
+| Có chuẩn hóa JobRole đáng tin cậy không; ai quản lý ánh xạ, chức danh mới/không rõ và phiên bản mapping? | | | | |
+| Chọn general_16 hay no_department_17 trong phạm vi đã xác nhận; lý do và đánh đổi fairness/tính áp dụng được chấp nhận? | | | | |
+| Ai được xem điểm/cảnh báo; phạm vi truy cập, mục đích sử dụng, bảo mật và thời hạn lưu? | | | | |
+| Ai kiểm tra bối cảnh, quyết định và thực hiện hành động hỗ trợ sau cảnh báo; khi nào cần dừng hoặc chuyển người phụ trách? | | | | |
+| Ghi nhận hành động, người chịu trách nhiệm, thời điểm, kết quả và phản hồi/sửa dữ liệu thế nào; đánh giá lại khi nào? Không coi phản hồi là nhãn nghỉ việc đã xác thực. | | | | |
+| Đã xem xét hạn chế fairness, nhóm thiếu hỗ trợ và giới hạn nhãn IBM; xử lý thắc mắc của người bị ảnh hưởng thế nào? | | | | |
 | Đã chốt đơn vị thu nhập, cách xác định làm thêm, thang khảo sát, thời điểm chụp dữ liệu và cách xử lý thiếu dữ liệu chưa? | | | | |
+| Quyết định tổng thể, phạm vi hiệu lực và các điều kiện còn treo; người quyết định cuối cùng và ngày xác nhận? | | | | |
 
-## 6. Nếu chưa có HR thực tế: kịch bản mô phỏng cho đồ án
+Không có ô nào được điền sẵn bằng tên/ngày hoặc suy ra phê duyệt từ việc đã đọc
+tài liệu. Xác nhận đồ án không tương đương chấp thuận sử dụng cho nhân viên thật.
 
-Lựa chọn chưa được chọn: ☐ **Kịch bản mô phỏng cho đồ án**.
+## 7. Nếu chưa có HR thực tế: đề xuất mô phỏng cho đồ án
 
-Một đề xuất để thảo luận là mô phỏng top-k 10%, bộ 16 là phương án ưu tiên về
-đầu vào và bộ 17 là đối chứng. Giả định phải ghi rõ: dữ liệu IBM, năm nhóm kỹ thuật
-đã lưu, làm tròn xuống từng nhóm, quy tắc hòa hiện tại, không có năng lực HR hay
-chi phí FP/FN được xác nhận, không khẳng định hiệu quả can thiệp hoặc chân trời
-nghỉ việc. Tỷ lệ 10% chỉ là điểm bắt đầu trao đổi, **không phải mức tối ưu kinh doanh**.
+**Trạng thái phương án: đề xuất, chưa phê duyệt.**
+Lựa chọn chưa được xác nhận: ☐ **Kịch bản mô phỏng cho đồ án**.
+
+Đề xuất minh họa để chủ dự án xem xét: **Logistic baseline raw general_16 + top-k
+10%**; bộ 17 tiếp tục là đối chứng IBM. Lý do thảo luận: không phụ thuộc mapping
+JobRole và giới hạn lượt xem theo từng đợt đã chốt. Đây **không phải policy tối ưu,
+không phải quyết định HR và chưa được phép áp dụng cho nhân viên thật**.
+
+Các giả định vẫn cần người thật xác nhận:
+
+- Chỉ mô phỏng học thuật trên bằng chứng IBM đã lưu hoặc dữ liệu giả lập được
+  cho phép; không biến năm folds thành năm tháng hoặc năm đợt doanh nghiệp thật.
+- Bộ 16 và capacity 10% là lựa chọn minh họa, không được xác nhận bởi ưu thế
+  fairness; chấp nhận đưa các cờ review và thiếu hỗ trợ vào demo/báo cáo.
+- Phải định nghĩa đợt, snapshot, đối tượng tham gia, capacity, floor và trường hợp
+  k=0 trước khi dùng top-k. Không chọn một người chỉ vì cần “ít nhất một cảnh báo”.
+- source_row chỉ dùng để tái hiện thứ tự hòa của IBM. ID ổn định cho bối cảnh
+  khác và khả năng quản lý đợt chưa được xác minh, cần chốt trong data contract.
+- Năng lực HR, chi phí FP/FN, quyền xem, hành động/ghi nhận sau cảnh báo và hiệu
+  quả can thiệp chưa được xác nhận. Không tối ưu chi phí tự đặt hoặc hứa horizon
+  nghỉ việc 3–6 tháng. Con người kiểm tra và chịu trách nhiệm quyết định nhân sự.
 
 Người phụ trách đồ án có thể xác nhận phạm vi mô phỏng sau này, nhưng không được
 chuyển xác nhận học thuật thành “HR/doanh nghiệp đã phê duyệt”. Hiện chưa ghi nhận
 xác nhận nào trong tài liệu này.
 
-## 7. Decision log
+## 8. Decision log
 
 ### Kết quả kỹ thuật đã quan sát
 
@@ -115,6 +199,7 @@ xác nhận nào trong tài liệu này.
 | Kết quả top-k theo ba mức | Bảng mục 2, tính lại từ OOF và khớp report/metrics đã lưu. |
 | Hai danh sách không tương đương ở 10% | Bảng mục 3: 82 người chung, 55 TP chung, 12 TP riêng mỗi bộ. |
 | Ngưỡng không bảo đảm năng lực đợt mới | Số fold vượt ngân sách ở mục 4; đây là quan sát kỹ thuật, không phải phê duyệt. |
+| Fairness có các đánh đổi và thiếu hỗ trợ | Mục 5: gap tuổi, chuyển dịch TP giữa các nhóm MaritalStatus, biến động theo fold; không có chứng nhận fairness. |
 
 ### Giả định chờ xác nhận
 
@@ -123,6 +208,8 @@ xác nhận nào trong tài liệu này.
 | Năng lực 5%/10%/15% | Phạm vi đợt và năng lực HR thực tế. |
 | Chọn policy, bộ feature và quy tắc hòa | Ý kiến HR, khả năng ánh xạ chức danh, chuẩn dữ liệu và quy trình tiếp nhận cảnh báo. |
 | Kịch bản đồ án thay cho thử nghiệm doanh nghiệp | Xác nhận phạm vi học thuật riêng; không thay thế business approval. |
+| Đề xuất general_16 + top-k 10% | Chưa có xác nhận policy HR/mô phỏng; bundle demo raw đã được cho phép riêng, không áp dụng cho nhân viên thật. |
+| ID/batch, quyền xem và quy trình phản hồi | Cần xác nhận yêu cầu và kiểm tra nguồn dữ liệu; không giả định backend đã hỗ trợ. |
 
 ### Quyết định đã xác nhận
 
@@ -130,14 +217,31 @@ xác nhận nào trong tài liệu này.
 |---|---|---|---|---|
 | | | | | |
 
-## 8. Điều kiện chuyển bước
+## 9. Điều kiện chuyển bước và điểm phải dừng
 
-Chỉ sau khi HR xác nhận phạm vi đợt và năng lực xử lý, chọn policy và feature set,
-chốt quy tắc dữ liệu đầu vào, hòa điểm và quy trình sau cảnh báo, mới thiết kế
-contract API/model artifact và kế hoạch đánh giá trên dữ liệu doanh nghiệp mới.
-Kế hoạch mới cần định nghĩa nhãn, thời điểm đo, chân trời dự đoán và tiêu chí đánh
-giá trước; không coi kết quả IBM là sự xác thực cho doanh nghiệp mục tiêu.
-Nếu chỉ làm đồ án, phải ghi rõ contract là mô phỏng, chưa được chấp thuận triển khai.
+**Hồ sơ đủ để ra quyết định, nhưng chưa đủ điều kiện chốt data contract doanh nghiệp
+hoặc chọn candidate áp dụng thực tế:** còn thiếu xác nhận ở mục 6. Việc fit/bundle
+research/demo theo IBM được người dùng cho phép riêng không thay thế xác nhận này.
+Các nội dung cần xác nhận không được tự điền từ đề xuất ở mục 7.
+
+1. Người có thẩm quyền xác nhận phạm vi HR/mô phỏng, lựa chọn feature/policy,
+   đợt, capacity, hòa điểm, quyền xem và quy trình sau cảnh báo; ghi rõ điều còn treo.
+2. Sau đó mới hoàn thiện và phê duyệt **data contract**: tên/kiểu/đơn vị/thang đo,
+   snapshot, thiếu dữ liệu, ID/batch và mapping nếu có. Đây là quy tắc dữ liệu,
+   **không phải thiết kế schema API/backend**. Contract cho đồ án phải ghi phạm vi
+   mô phỏng, không phải chấp thuận triển khai doanh nghiệp.
+3. Candidate áp dụng theo phạm vi HR/đồ án đã xác nhận vẫn cần quyết định và data
+   contract tương ứng. Bundle general_16 hiện có chỉ là ngoại lệ được cho phép
+   riêng để nghiên cứu/demo trên mã hóa IBM, không phải bundle đã được HR phê
+   duyệt. Không dùng final test V1 để chọn hoặc chứng nhận V2.
+4. **Dừng và thông báo chủ dự án trước mọi thiết kế hoặc thay đổi API/backend**,
+   kể cả contract API hoặc tích hợp web. Không suy ra quyền triển khai từ việc
+   phê duyệt mô phỏng, data contract hoặc bundle. Chờ chỉ dẫn riêng tại mốc này.
+
+Lượt chuẩn bị hồ sơ ban đầu không thực hiện các bước trên; lần cập nhật trạng thái
+bundle chỉ ghi nhận phạm vi research/demo riêng, không điền quyết định thay HR.
+Đánh giá doanh nghiệp mới sau này cần nhãn và mốc thời gian rõ ràng, không coi
+kết quả IBM là xác thực hiệu năng, fairness hoặc horizon tại doanh nghiệp mục tiêu.
 
 ## Nguồn và kiểm tra
 
@@ -146,6 +250,13 @@ Nguồn nội bộ: `docs/threshold_policy_v2.md`, report và metrics/folds/pair
 `artifacts/predictions/threshold_policy_v2_oof.csv`. **Không gửi CSV cấp nhân viên
 kèm tài liệu chia sẻ này.** SHA-256 của OOF:
 `7bd9c5017ea70b548b82918b11f0181441129804c03dc98431be9c38cee5c221`.
+
+Bổ sung fairness từ `docs/fairness_v2.md`, report `artifacts/reports/fairness_v2.md`,
+các bảng `fairness_v2_policy.csv`, `fairness_v2_paired_policy.csv`,
+`fairness_v2_probability.csv`, `fairness_v2_probability_stability.csv` và trace
+`fairness_v2_trace.json`. Các bảng tổng hợp lưu sẵn được đối chiếu lại; không chạy
+lại audit hoặc tái tạo OOF. Số phần trăm/lượt xem đã làm tròn để trình bày, không
+thay đổi số liệu gốc. Lượt xem/TP chỉ mô tả nhãn IBM, không phải hiệu quả can thiệp.
 
 Đã kiểm tra fingerprint, ghép đúng ID/target/fold và tính lại số liệu tổng hợp.
 Không đọc final-test CSV, train/tune/calibrate, chọn ngưỡng production hoặc sửa API.

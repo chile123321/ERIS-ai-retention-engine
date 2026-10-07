@@ -1,10 +1,12 @@
 <# Start the separate research-only UI on the fixed loopback address. #>
 [CmdletBinding()]
-param([switch]$NoBrowser)
+param([switch]$NoBrowser, [string]$PythonExecutable)
 
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = (Resolve-Path -LiteralPath (Split-Path -Parent $PSScriptRoot)).Path
-$pythonExecutable = Join-Path $repositoryRoot '.venv\Scripts\python.exe'
+if (-not $PythonExecutable) {
+    $PythonExecutable = Join-Path $repositoryRoot '.venv\Scripts\python.exe'
+}
 $bundlePath = Join-Path $repositoryRoot 'artifacts\models\eris_xgboost_v1.joblib'
 $url = 'http://127.0.0.1:8501/'
 
@@ -13,7 +15,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $repositoryRoot 'pyproject.toml') -P
     throw 'The script is not inside the expected ERIS repository.'
 }
 if (-not (Test-Path -LiteralPath $pythonExecutable -PathType Leaf)) {
-    throw 'Python virtual environment is missing: .venv\Scripts\python.exe'
+    throw 'Python executable is missing. Supply -PythonExecutable or create the repo .venv.'
 }
 if (-not (Test-Path -LiteralPath $bundlePath -PathType Leaf)) {
     throw 'Frozen bundle is missing: artifacts\models\eris_xgboost_v1.joblib'

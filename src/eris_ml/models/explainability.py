@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 import pandas as pd
-from scipy.sparse import issparse
+from scipy.sparse import csr_matrix, issparse
 
 if TYPE_CHECKING:
     from eris_ml.models.bundle import ModelBundle
@@ -43,7 +43,8 @@ def _shap_matrix(bundle: ModelBundle, frame: pd.DataFrame) -> tuple[np.ndarray, 
     preprocessor = bundle.pipeline.named_steps["preprocessor"]
     model = bundle.pipeline.named_steps["model"]
     transformed = preprocessor.transform(frame)
-    matrix = transformed.toarray() if issparse(transformed) else np.asarray(transformed)
+    matrix = (cast(csr_matrix, transformed).toarray() if issparse(transformed)
+              else np.asarray(transformed))
     explainer = shap.TreeExplainer(
         model, model_output="raw", feature_perturbation="tree_path_dependent",
     )

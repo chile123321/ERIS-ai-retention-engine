@@ -1,7 +1,7 @@
 """Development-only tree comparison tables and reproducible experiment provenance."""
 
 import json
-from typing import Any
+from typing import Any, cast
 
 from eris_ml.evaluation.feature_ablation import METRICS, AblationResult
 from eris_ml.evaluation.feature_ablation_reporting import markdown_table
@@ -14,8 +14,8 @@ def build_report(result: AblationResult, trace: dict[str, Any]) -> str:
     notes = []
     for model in ALL_MODELS:
         rows = summary.loc[summary.model == model].set_index("feature_set")
-        gap = rows.loc["v2_general_16", "average_precision"] - rows.loc[
-            "v2_full_18", "average_precision"]
+        gap = cast(float, rows.loc["v2_general_16", "average_precision"]) - cast(
+            float, rows.loc["v2_full_18", "average_precision"])
         job = deltas.loc[(deltas.model == model)
                          & (deltas.reference_model == model)
                          & (deltas.feature_set == "v2_no_jobrole_17")

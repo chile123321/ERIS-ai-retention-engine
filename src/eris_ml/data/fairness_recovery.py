@@ -2,6 +2,7 @@
 
 import csv
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 
@@ -55,7 +56,7 @@ def extract_development_audit_rows(raw_path: Path, development: pd.DataFrame) ->
         for source_row, row in enumerate(reader):
             if source_row not in approved.index:
                 continue
-            expected = approved.loc[source_row]
+            expected = cast("pd.Series[int]", approved.loc[source_row])
             employee_number = int(row["EmployeeNumber"])
             if employee_number != int(expected["EmployeeNumber"]):
                 raise ValueError("Raw and development EmployeeNumber do not align.")

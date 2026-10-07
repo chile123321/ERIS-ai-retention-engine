@@ -1,11 +1,14 @@
 """Estimator factory interfaces."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sklearn.base import BaseEstimator
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+
+if TYPE_CHECKING:
+    from xgboost import XGBClassifier
 
 
 class EstimatorConfigError(ValueError):
@@ -39,7 +42,7 @@ def _fixed_parameters(
     return resolved
 
 
-def _load_xgb_classifier() -> type[BaseEstimator]:
+def _load_xgb_classifier() -> type["XGBClassifier"]:
     try:
         from xgboost import XGBClassifier
     except ImportError as exc:

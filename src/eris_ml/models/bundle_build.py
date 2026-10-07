@@ -7,7 +7,7 @@ import platform
 from datetime import UTC, datetime
 from importlib.metadata import version
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -139,7 +139,7 @@ def development_shap_sample(development: pd.DataFrame, target: pd.Series,
         return development.copy()
     splitter = StratifiedShuffleSplit(n_splits=1, train_size=maximum, random_state=42)
     positions, _ = next(splitter.split(development, target))
-    return development.iloc[positions].copy()
+    return cast(pd.DataFrame, development.iloc[positions].copy())
 
 
 def render_shap_plot(importance: pd.DataFrame, path: Path) -> None:

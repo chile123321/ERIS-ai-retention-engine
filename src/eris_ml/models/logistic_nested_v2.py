@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -83,9 +83,9 @@ def metric_tables(oof: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.Dat
         summary = {"feature_set": feature, "model": model,
                    **probability_metrics(rows.Attrition.to_numpy(), rows.probability.to_numpy())}
         for metric in METRICS:
-            values = [row[metric] for row in local]
-            summary[f"{metric}_mean"] = float(np.mean(values))
-            summary[f"{metric}_std"] = float(np.std(values, ddof=1))
+            fold_values = [cast(float, row[metric]) for row in local]
+            summary[f"{metric}_mean"] = float(np.mean(fold_values))
+            summary[f"{metric}_std"] = float(np.std(fold_values, ddof=1))
         summaries.append(summary)
     summary_frame, fold_frame = pd.DataFrame(summaries), pd.DataFrame(folds)
     indexed = summary_frame.set_index(["feature_set", "model"])
@@ -95,14 +95,16 @@ def metric_tables(oof: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.Dat
     deltas = []
     for feature, model, reference, reference_model in pairs:
         for metric in METRICS:
-            values = [float(fold_index.loc[(feature, model, fold), metric]
-                            - fold_index.loc[(reference, reference_model, fold), metric])
-                      for fold in range(1, 6)]
+            values = [
+                float(cast(float, fold_index.loc[(feature, model, fold), metric])
+                      - cast(float, fold_index.loc[(reference, reference_model, fold), metric]))
+                for fold in range(1, 6)
+            ]
             deltas.append({
                 "feature_set": feature, "model": model, "reference": reference,
                 "reference_model": reference_model, "metric": metric,
-                "pooled_delta": indexed.loc[(feature, model), metric]
-                - indexed.loc[(reference, reference_model), metric],
+                "pooled_delta": cast(float, indexed.loc[(feature, model), metric])
+                - cast(float, indexed.loc[(reference, reference_model), metric]),
                 "improved_folds": sum(v < 0 if metric == "brier_score" else v > 0 for v in values),
                 **{f"fold_{i}": value for i, value in enumerate(values, 1)},
             })

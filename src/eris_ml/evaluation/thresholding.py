@@ -1,12 +1,13 @@
 """Leakage-safe, business-scenario threshold selection on development data only."""
 
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, clone
 from sklearn.model_selection import StratifiedKFold
+from sklearn.pipeline import Pipeline
 
 from eris_ml.features.definitions import FeatureDefinition, validate_feature_columns
 from eris_ml.models.calibration import validate_xgboost_parameters
@@ -228,7 +229,7 @@ def select_threshold(curve: pd.DataFrame, scenario: Mapping[str, Any]) -> dict[s
         )
     else:
         raise ValueError(f"Unknown threshold scenario kind: {kind!r}.")
-    return dict(ordered.iloc[0].to_dict())
+    return cast(dict[str, Any], dict(ordered.iloc[0].to_dict()))
 
 
 def threshold_stability(values: list[float]) -> dict[str, Any]:
@@ -257,7 +258,7 @@ def per_thousand(metrics: Mapping[str, Any]) -> dict[str, float]:
     }
 
 
-def _positive_probability(estimator: BaseEstimator, features: pd.DataFrame) -> np.ndarray:
+def _positive_probability(estimator: Pipeline, features: pd.DataFrame) -> np.ndarray:
     classes = np.asarray(estimator.classes_)
     positive = np.flatnonzero(classes == 1)
     if len(positive) != 1:
@@ -349,7 +350,7 @@ def run_cross_fitted_policies(
     }
     if set(frame.columns) != expected_columns:
         raise ValueError("Development frame has unexpected or missing columns.")
-    features = frame.loc[:, definition.all_features].copy()
+    features = cast(pd.DataFrame, frame.loc[:, definition.all_features].copy())
     validate_feature_columns(features.columns, definition)
     labels = normalize_binary_target(frame["Attrition"]).to_numpy()
     if np.bincount(labels).min() < outer_splits * inner_splits:

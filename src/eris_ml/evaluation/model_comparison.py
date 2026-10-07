@@ -1,7 +1,7 @@
 """Fixed tree baselines on persisted V2 folds, with unmodified Logistic references."""
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -67,7 +67,7 @@ def summarize(oof: pd.DataFrame, assignments: pd.DataFrame) -> AblationResult:
             local.append(record)
             folds.append(record)
         for metric in METRICS:
-            values = [part[metric] for part in local]
+            values = [cast(float, part[metric]) for part in local]
             row[f"{metric}_mean"] = float(np.mean(values))
             row[f"{metric}_std"] = float(np.std(values, ddof=1))
         summaries.append(row)
@@ -132,14 +132,15 @@ def comparison_deltas(result: AblationResult) -> pd.DataFrame:
     for feature, model, ref_feature, ref_model in pairs:
         for metric in METRICS:
             changes = np.array([
-                fold_index.loc[(feature, model, fold), metric]
-                - fold_index.loc[(ref_feature, ref_model, fold), metric] for fold in range(1, 6)
+                cast(float, fold_index.loc[(feature, model, fold), metric])
+                - cast(float, fold_index.loc[(ref_feature, ref_model, fold), metric])
+                for fold in range(1, 6)
             ])
             records.append({
                 "feature_set": feature, "model": model, "reference_feature": ref_feature,
                 "reference_model": ref_model, "metric": metric,
-                "pooled_delta": summary.loc[(feature, model), metric]
-                - summary.loc[(ref_feature, ref_model), metric],
+                "pooled_delta": cast(float, summary.loc[(feature, model), metric])
+                - cast(float, summary.loc[(ref_feature, ref_model), metric]),
                 "improved_folds": int(np.sum(changes < 0 if metric == "brier_score"
                                               else changes > 0)),
                 **{f"fold_{i}": float(value) for i, value in enumerate(changes, 1)},

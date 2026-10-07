@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, cast
 
 import pandas as pd
 
@@ -31,7 +31,8 @@ def build_report(result: AblationResult, trace: dict[str, Any]) -> str:
             indexed = summary.loc[summary.model == model].set_index("feature_set")
             direct.append({
                 "model": model, "comparison": f"general_16 minus {reference}",
-                **{metric: indexed.loc["v2_general_16", metric] - indexed.loc[reference, metric]
+                **{metric: cast(float, indexed.loc["v2_general_16", metric])
+                   - cast(float, indexed.loc[reference, metric])
                    for metric in METRICS},
             })
     paired = []
@@ -39,24 +40,24 @@ def build_report(result: AblationResult, trace: dict[str, Any]) -> str:
         if name == "v2_full_18":
             continue
         current = folds.loc[(folds.model == "logistic_regression") & (folds.feature_set == name)]
-        reference = folds.loc[(folds.model == "logistic_regression")
-                              & (folds.feature_set == "v2_full_18")].set_index("fold")
+        reference_folds = folds.loc[(folds.model == "logistic_regression")
+                                    & (folds.feature_set == "v2_full_18")].set_index("fold")
         for _, row in current.iterrows():
             paired.append({"feature_set": name, "fold": row["fold"], **{
-                metric: row[metric] - reference.loc[row["fold"], metric] for metric in METRICS
+                metric: row[metric] - reference_folds.loc[row["fold"], metric] for metric in METRICS
             }})
     paired_frame = pd.DataFrame(paired)
     notes = []
     for name in REMOVED:
         if name == "v2_full_18":
             continue
-        row = logistic.loc[name]
+        summary_row = cast("pd.Series[float]", logistic.loc[name])
         changes = paired_frame.loc[paired_frame.feature_set == name]
-        worst = changes.loc[changes.average_precision.idxmin()]
+        worst = cast("pd.Series[float]", changes.loc[cast(int, changes.average_precision.idxmin())])
         notes.append(
-            f"- {name}: pooled delta AP {row['average_precision_delta_vs_full']:+.6f}, "
-            f"ROC-AUC {row['roc_auc_delta_vs_full']:+.6f}, "
-            f"Brier {row['brier_score_delta_vs_full']:+.6f}. "
+            f"- {name}: pooled delta AP {summary_row['average_precision_delta_vs_full']:+.6f}, "
+            f"ROC-AUC {summary_row['roc_auc_delta_vs_full']:+.6f}, "
+            f"Brier {summary_row['brier_score_delta_vs_full']:+.6f}. "
             f"AP improved in {int((changes.average_precision > 0).sum())}/5 folds; "
             f"Brier improved in {int((changes.brier_score < 0).sum())}/5 folds. "
             f"Largest AP deterioration: fold {int(worst['fold'])}, "

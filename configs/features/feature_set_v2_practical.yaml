@@ -1,7 +1,21 @@
 version: "v2-practical-matrix"
-status: feature_scope_approved_training_not_started
-description: "Registry for four approved v2 feature-set variants."
-source_dictionary: "../Documents/ERIS_Feature_Category_Dictionary_v2.xlsx"
+status: development_experiments_completed_hr_decision_pending
+description: "Registry for four scope-approved v2 feature variants; not production approval."
+source_dictionary:
+  name: ERIS_Feature_Category_Dictionary_v2.xlsx
+  version: v2
+  source: user_supplied_local_workbook
+  distribution: external_not_committed
+  sha256: 05e2e70455dbc1047075e8a930a85aa37c72cb133a60ea8d7ffa40555481bc02
+  provision_instructions: docs/v2_status.md#dictionary-provenance
+current_candidate:
+  model: logistic_baseline
+  probability_type: raw
+  preferred_feature_set: v2_general_16
+  comparator_feature_set: v2_no_department_17
+  business_approved: false
+  production_approved: false
+  status_reference: docs/v2_status.md
 
 preferred_feature_set:
   name: v2_general_16

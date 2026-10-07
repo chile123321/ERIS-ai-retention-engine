@@ -11,12 +11,15 @@ param(
     [ValidateRange(1, 10)]
     [int]$TopK = 5,
     [switch]$JsonOutput,
-    [switch]$DebugMode
+    [switch]$DebugMode,
+    [string]$PythonExecutable
 )
 
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = (Resolve-Path -LiteralPath (Split-Path -Parent $PSScriptRoot)).Path
-$pythonExecutable = Join-Path $repositoryRoot '.venv\Scripts\python.exe'
+if (-not $PythonExecutable) {
+    $PythonExecutable = Join-Path $repositoryRoot '.venv\Scripts\python.exe'
+}
 $bundlePath = Join-Path $repositoryRoot 'artifacts\models\eris_xgboost_v1.joblib'
 $cliPath = Join-Path $PSScriptRoot 'manual_model_test.py'
 
@@ -27,7 +30,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $repositoryRoot 'pyproject.toml') -P
 }
 
 if (-not (Test-Path -LiteralPath $pythonExecutable -PathType Leaf)) {
-    Write-Error 'Python virtual environment is missing: .venv\Scripts\python.exe'
+    Write-Error 'Python executable is missing. Supply -PythonExecutable or create the repo .venv.'
     exit 1
 }
 if (-not (Test-Path -LiteralPath $bundlePath -PathType Leaf)) {

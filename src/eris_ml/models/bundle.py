@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -120,7 +120,7 @@ class ModelBundle:
                         f"{name}: invalid value {value!r}; expected one of "
                         f"{self.metadata['ordinal_domains'][name]} or missing."
                     )
-        return frame
+        return cast(pd.DataFrame, frame)
 
     def predict_proba(self, records: dict[str, Any] | list[dict[str, Any]] |
                       pd.DataFrame) -> np.ndarray:

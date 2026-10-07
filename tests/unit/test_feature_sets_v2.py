@@ -74,7 +74,25 @@ def test_v2_registry_names_preferred_schema_and_shared_folds() -> None:
     registry = yaml.safe_load(
         (FEATURE_DIR / "feature_set_v2_practical.yaml").read_text(encoding="utf-8")
     )
-    assert (ROOT / registry["source_dictionary"]).resolve().is_file()
+    # The workbook is externally supplied, not a prerequisite for schema unit tests.
+    # Local availability/content hash is checked separately by the repository gate.
+    source = registry["source_dictionary"]
+    assert source["name"] == "ERIS_Feature_Category_Dictionary_v2.xlsx"
+    assert source["version"] == "v2"
+    assert source["source"] == "user_supplied_local_workbook"
+    assert source["distribution"] == "external_not_committed"
+    assert source["sha256"] == (
+        "05e2e70455dbc1047075e8a930a85aa37c72cb133a60ea8d7ffa40555481bc02"
+    )
+    assert (ROOT / source["provision_instructions"].split("#", 1)[0]).is_file()
+    assert registry["status"] == "development_experiments_completed_hr_decision_pending"
+    candidate = registry["current_candidate"]
+    assert candidate["model"] == "logistic_baseline"
+    assert candidate["probability_type"] == "raw"
+    assert candidate["preferred_feature_set"] == "v2_general_16"
+    assert candidate["comparator_feature_set"] == "v2_no_department_17"
+    assert candidate["business_approved"] is False
+    assert candidate["production_approved"] is False
     assert set(registry["comparison_feature_sets"]) == set(VARIANTS)
     assert registry["preferred_feature_set"]["name"] == "v2_general_16"
     protocol = registry["comparison_protocol"]
