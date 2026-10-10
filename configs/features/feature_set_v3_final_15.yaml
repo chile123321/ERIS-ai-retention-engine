@@ -1,0 +1,76 @@
+version: v3_final_15
+status: locked_research_baseline_not_production
+# Ordered list is the sole runtime source for X names, order and validation.
+features:
+  - {name: Age, type: integer, required: true, minimum: 0}
+  - name: Department
+    type: categorical
+    required: true
+    vocabulary: [Human Resources, Research & Development, Sales]
+  - {name: DistanceFromHome, type: integer, required: true, minimum: 0}
+  - {name: Education, type: integer, required: true, values: [1, 2, 3, 4, 5]}
+  - {name: EnvironmentSatisfaction, type: integer, required: true, values: [1, 2, 3, 4]}
+  - {name: JobLevel, type: integer, required: true, values: [1, 2, 3, 4, 5]}
+  - {name: JobSatisfaction, type: integer, required: true, values: [1, 2, 3, 4]}
+  - {name: MonthlyIncome, type: integer, required: true, minimum: 0}
+  - {name: OverTime, type: categorical, required: true, vocabulary: ["No", "Yes"]}
+  - {name: TotalWorkingYears, type: integer, required: true, minimum: 0}
+  - {name: TrainingTimesLastYear, type: integer, required: false, minimum: 0}
+  - {name: YearsAtCompany, type: integer, required: true, minimum: 0}
+  - {name: YearsInCurrentRole, type: integer, required: true, minimum: 0}
+  - {name: YearsSinceLastPromotion, type: integer, required: true, minimum: 0}
+  - {name: YearsWithCurrManager, type: integer, required: false, minimum: 0}
+target: {name: Attrition, mapping: {"No": 0, "Yes": 1}}
+non_features:
+  identifiers: [EmployeeNumber, source_row]
+  audit_only: [Gender, MaritalStatus]
+  excluded: [BusinessTravel, EducationField, JobInvolvement, JobRole, NumCompaniesWorked,
+             PercentSalaryHike, PerformanceRating, RelationshipSatisfaction,
+             StockOptionLevel, WorkLifeBalance]
+semantics:
+  units: IBM numeric codes; MonthlyIncome currency and DistanceFromHome unit unconfirmed
+  numeric_bounds: nonnegative integer representation, not HR-approved business bounds
+  observed_ranges: record development ranges in metadata only; do not use as business bounds
+  optional_imputer: median, training fold only; no missing indicators
+  all_missing_optional_training_column: error; median is undefined, never replace with zero
+  horizon: no validated 3-6 month forecast or intervention benefit
+data:
+  development: data/processed/development_raw_v1.csv
+  manifest: data/processed/split_manifest_v1.csv
+  assignments: artifacts/predictions/baseline_feature_ablation_v2_assignments.csv
+  provenance_trace: artifacts/reports/baseline_feature_ablation_v2_trace.json
+  holdout_ledger: configs/release/final_evaluation_record_v1.yaml
+  expected_rows: 1176
+  expected_target: {0: 986, 1: 190}
+  expected_manifest_rows: 1470
+cv: {type: StratifiedKFold, n_splits: 5, shuffle: true, random_state: 42}
+execution: {estimator_n_jobs: 1, outer_parallelism: 1}
+threshold_reference: 0.5
+primary_metric: average_precision
+models:
+  dummy_prior:
+    model: dummy
+    random_seed: 42
+    parameters: {strategy: prior}
+  logistic_regression:
+    model: logistic_regression
+    random_seed: 42
+    parameters: {solver: liblinear, C: 1.0, max_iter: 2000, class_weight: null}
+  random_forest:
+    model: random_forest
+    random_seed: 42
+    parameters: {n_estimators: 500, max_depth: null, min_samples_split: 2,
+                 min_samples_leaf: 1, max_features: sqrt, class_weight: null, n_jobs: -1}
+  xgboost:
+    model: xgboost
+    random_seed: 42
+    parameters: {n_estimators: 300, max_depth: 3, learning_rate: 0.05, subsample: 0.8,
+                 colsample_bytree: 0.8, min_child_weight: 1, reg_lambda: 1.0,
+                 scale_pos_weight: 1.0, eval_metric: logloss, tree_method: hist, n_jobs: -1}
+# V1 baseline factory validates these parameters; execution overrides only n_jobs to 1.
+outputs:
+  preflight: artifacts/reports/v3_final_15/{run_id}/preflight.json
+  metrics: artifacts/reports/v3_final_15/{run_id}/metrics.json
+  metadata: artifacts/reports/v3_final_15/{run_id}/metadata.json
+  oof: artifacts/predictions/v3_final_15/{run_id}/oof.csv
+  summary: artifacts/reports/v3_final_15/summary.md
