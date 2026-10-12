@@ -1,0 +1,36 @@
+protocol_version: v3-final-15-calibration-v1
+feature_config: configs/features/feature_set_v3_final_15.yaml
+baseline_metadata: artifacts/reports/v3_final_15/r1/metadata.json
+tuning_metadata: artifacts/reports/v3_final_15/t1/metadata.json
+models: [rf_tuned, logistic_baseline]
+methods: [raw, sigmoid]
+calibration:
+  method: sigmoid
+  ensemble: false
+  cv: {n_splits: 4, shuffle: true, random_state: 43}
+raw_regression: {rtol: 1.0e-7, atol: 1.0e-9}
+rank_numerical_tolerance: 1.0e-12
+bins: {count: 5, strategy: quantile, duplicate_edges: collapse}
+recommendation:
+  require_pooled_brier_reduction: true
+  require_pooled_log_loss_reduction: true
+  minimum_brier_improved_folds: 3
+  maximum_ap_drop: 0.005
+  maximum_roc_auc_drop: 0.005
+  small_brier_improvement: 0.001
+top_k:
+  capacity_percent: [5, 10, 15]
+  batch: each_outer_validation_fold
+  rounding: floor_integer_percent_times_rows
+  order: [probability_descending, source_row_ascending]
+  business_approved: false
+optional_missing:
+  original: []
+  missing_training: [TrainingTimesLastYear]
+  missing_manager: [YearsWithCurrManager]
+  missing_both: [TrainingTimesLastYear, YearsWithCurrManager]
+overlap_definition: intersection_size_divided_by_original_top_10_count
+execution: {outer_n_jobs: 1, calibration_n_jobs: 1, native_threads: 1}
+base_estimator_fits: 50
+final_test_accessed: false
+production_approved: false

@@ -1,0 +1,35 @@
+protocol_version: v3-final-15-nested-tuning-v1
+feature_config: configs/features/feature_set_v3_final_15.yaml
+baseline_metadata: artifacts/reports/v3_final_15/r1/metadata.json
+inner_cv:
+  n_splits: 4
+  shuffle: true
+  random_state: 43
+scoring: average_precision
+tie_breaker: first_candidate_in_deterministic_search_order_exact_score_tie
+estimator_seed: 42
+search_seed: 43
+execution:
+  outer_n_jobs: 1
+  search_n_jobs: 1
+  forest_n_jobs: 4
+  native_threads: 1
+logistic:
+  C: [0.01, 0.1, 1, 10, 100]
+  regularization: [L1, L2]
+  class_weight: [null, balanced]
+  solver: liblinear
+  max_iter: 10000
+random_forest:
+  n_iter: 40
+  distributions:
+    n_estimators: [300, 600]
+    max_depth: [null, 4, 6, 10]
+    min_samples_leaf: [1, 2, 4, 8, 12]
+    min_samples_split: [2, 5, 10]
+    max_features: [sqrt, 0.5, 1.0]
+    class_weight: [null, balanced, balanced_subsample]
+    bootstrap: [true]
+threshold_reference_only: 0.5
+full_development_fit: false
+final_test_accessed: false
