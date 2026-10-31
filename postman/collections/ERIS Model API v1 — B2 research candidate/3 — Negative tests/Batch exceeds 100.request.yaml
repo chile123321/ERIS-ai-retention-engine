@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{base_url}}/v1/predict/batch"
+method: POST
+headers:
+  Content-Type: application/json
+  X-ERIS-Service-Key: "{{service_key}}"
+body:
+  type: json
+  content: "{{oversized_batch}}"
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("HTTP 422", () => pm.response.to.have.status(422));
+      pm.test("JSON response", () => pm.response.to.be.json);
+    language: text/javascript
+  - type: beforeRequest
+    code: |-
+      const template={"reference_id":"synthetic-one","features":{"Age":35,"Department":"Research & Development","DistanceFromHome":5,"Education":3,"EnvironmentSatisfaction":3,"JobLevel":2,"JobSatisfaction":3,"MonthlyIncome":5000,"OverTime":"No","TotalWorkingYears":10,"TrainingTimesLastYear":3,"YearsAtCompany":5,"YearsInCurrentRole":3,"YearsSinceLastPromotion":1,"YearsWithCurrManager":3}};
+      pm.variables.set("oversized_batch", JSON.stringify({items:Array.from({length:101},(_,i)=>({...template,reference_id:"synthetic-"+i}))}));
+    language: text/javascript
+order: 9000

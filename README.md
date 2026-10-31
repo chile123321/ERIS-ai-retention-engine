@@ -19,11 +19,21 @@ The existing raw data and split are immutable. The V1 final test was evaluated o
 
 - **V1 Full:** the approved set of up to 25 IBM HR candidate features.
 - **V2 Practical:** four locked feature sets: `v2_full_18`, `v2_no_department_17`, `v2_no_jobrole_17`, and `v2_general_16`. Enterprise collection semantics still need confirmation.
-- **V3 Minimal:** a small, easy-to-collect and easy-to-standardize feature set.
+- **V3 final 15:** the locked IBM-coded research set in
+  `configs/features/feature_set_v3_final_15.yaml`; two fields are optional.
 
-V2 development experiments are complete through baseline feature ablation, three-model comparison, Logistic nested tuning, calibration, hypothetical capacity-policy evaluation, and an HR discussion package. Logistic baseline **raw `v2_general_16`** is the portability-motivated working candidate; `v2_no_department_17` is the JobRole comparator. Tuned Logistic was not retained and calibration retained raw for both. The 5%/10%/15% capacities are assumptions, not HR approval or a production policy. V3 remains undefined.
+V2 development experiments are complete through baseline feature ablation, three-model comparison, Logistic nested tuning, calibration, hypothetical capacity-policy evaluation, and an HR discussion package. Logistic baseline **raw `v2_general_16`** is the portability-motivated working candidate; `v2_no_department_17` is the JobRole comparator. Tuned Logistic was not retained and calibration retained raw for both. The 5%/10%/15% capacities are assumptions, not HR approval or a production policy.
 
-See [V2 status and quality gate](docs/v2_status.md) for evidence, pending decisions and the next development-only fairness/subgroup audit. IBM cross-validation does not establish performance at a new employer or prediction 3–6 months ahead.
+V3 has development baseline, tuning, calibration and remediation results. The
+`rf-v3-final15-unweighted-b2` bundle is a research/demo candidate with
+development OOF evidence only. The consumed V3 `f1` evaluation belongs to
+`rf-v3-final15-b1`; it does not independently validate b2. No V3 API or
+production approval exists.
+
+See [V2 status and quality gate](docs/v2_status.md) for the historical V2 evidence and
+pending decisions. V3 run-specific provenance is recorded under
+`artifacts/reports/v3_final_15/`. IBM cross-validation does not establish
+performance at a new employer or prediction 3–6 months ahead.
 
 The original API and V1 manual UI still use the **V1, 25-feature bundle**. A separate
 Logistic raw `general_16` **research/demo candidate bundle** now exists at

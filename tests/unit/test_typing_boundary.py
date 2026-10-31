@@ -37,4 +37,5 @@ def test_shap_stub_checks_arguments_instead_of_hiding_untyped_imports(tmp_path: 
     errors = [line for line in result.stdout.splitlines() if ": error:" in line]
     assert result.returncode == 1, result.stdout + result.stderr
     assert len(errors) == 1, result.stdout
-    assert ':5: error:' in errors[0] and '[arg-type]' in errors[0], result.stdout
+    assert ':5: error:' in errors[0] and 'TreeExplainer' in errors[0], result.stdout
+    assert any(code in errors[0] for code in ('[arg-type]', '[call-overload]')), result.stdout

@@ -1,0 +1,26 @@
+services:
+  eris-model-api:
+    image: eris-model-api-b2:api3-local
+    build:
+      context: .
+      dockerfile: deploy/api_b2/Dockerfile
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      ERIS_SERVICE_API_KEY: "${ERIS_SERVICE_API_KEY:?Set a nonempty local service key in your shell}"
+      ERIS_EXPLAIN_QUEUE_SIZE: "2"
+      ERIS_EXPLAIN_TIMEOUT_SECONDS: "60"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: "no"
+    networks:
+      - model-api
+    # HEALTHCHECK inherited from image; one worker, no source/data mounts.
+networks:
+  model-api:
+    driver: bridge

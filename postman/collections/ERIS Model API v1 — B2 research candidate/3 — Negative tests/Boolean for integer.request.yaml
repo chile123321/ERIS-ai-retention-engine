@@ -1,0 +1,38 @@
+$kind: http-request
+url: "{{base_url}}/v1/predict"
+method: POST
+headers:
+  Content-Type: application/json
+  X-ERIS-Service-Key: "{{service_key}}"
+body:
+  type: json
+  content: |-
+    {
+      "reference_id": "synthetic-one",
+      "features": {
+        "Age": true,
+        "Department": "Research & Development",
+        "DistanceFromHome": 5,
+        "Education": 3,
+        "EnvironmentSatisfaction": 3,
+        "JobLevel": 2,
+        "JobSatisfaction": 3,
+        "MonthlyIncome": 5000,
+        "OverTime": "No",
+        "TotalWorkingYears": 10,
+        "TrainingTimesLastYear": 3,
+        "YearsAtCompany": 5,
+        "YearsInCurrentRole": 3,
+        "YearsSinceLastPromotion": 1,
+        "YearsWithCurrManager": 3
+      }
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("HTTP 422", () => pm.response.to.have.status(422));
+      pm.test("JSON response", () => pm.response.to.be.json);
+    language: text/javascript
+order: 7000

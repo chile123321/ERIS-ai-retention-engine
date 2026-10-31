@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/v1/model/info"
+method: GET
+headers:
+  X-ERIS-Service-Key: deliberately-invalid-test-value
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("HTTP 401", () => pm.response.to.have.status(401));
+      pm.test("JSON response", () => pm.response.to.be.json);
+    language: text/javascript
+order: 2000

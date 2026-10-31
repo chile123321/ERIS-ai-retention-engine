@@ -1,0 +1,846 @@
+{
+  "info": {
+    "name": "ERIS Model API v1 — B2 research candidate",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Manual synthetic tests only. Start a ready local B2 service and set service_key locally; never export credentials. OpenAPI is the canonical contract."
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "service_key",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test(\"No secret echoed\", () => { const key=pm.variables.get(\"service_key\"); if(key) pm.expect(pm.response.text()).not.to.include(key); });",
+          "pm.test(\"No decision fields\", () => { const visit = o => { if(o && typeof o===\"object\"){ Object.keys(o).forEach(k=>{pm.expect([\"threshold\",\"risk_level\",\"will_leave\"].includes(k)).to.eql(false); visit(o[k]);}); }}; visit(pm.response.json()); });",
+          "pm.test(\"Safe errors\", () => { if(pm.response.code>=400){ const text=pm.response.text(); pm.expect(text).not.to.match(/Traceback|[A-Z]:[\\\\/]|\\/app\\/|\\/usr\\/|site-packages/i); pm.expect(pm.response.json()).to.have.property(\"code\"); }});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "1 — Public",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": "{{base_url}}/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+                  "pm.test(\"Alive\", () => pm.expect(pm.response.json().status).to.eql(\"ok\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ready",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": "{{base_url}}/ready"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+                  "pm.test(\"Ready\", () => pm.expect(pm.response.json().status).to.eql(\"ready\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2 — Protected model API",
+      "item": [
+        {
+          "name": "Model info",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/model/info"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+                  "pm.test(\"Frozen B2 metadata\", () => { const j = pm.response.json(); const m = j.metadata || (j.result && j.result.metadata) || (j.results && j.results[0].metadata) || j; pm.expect(m.model_id).to.eql(\"rf-v3-final15-unweighted-b2\"); pm.expect(m.model_status).to.eql(\"research_candidate\"); pm.expect(m.independent_validation).to.eql(false); pm.expect(m.decision_support_only).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Predict one valid",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/predict",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference_id\": \"synthetic-one\",\n  \"features\": {\n    \"Age\": 35,\n    \"Department\": \"Research & Development\",\n    \"DistanceFromHome\": 5,\n    \"Education\": 3,\n    \"EnvironmentSatisfaction\": 3,\n    \"JobLevel\": 2,\n    \"JobSatisfaction\": 3,\n    \"MonthlyIncome\": 5000,\n    \"OverTime\": \"No\",\n    \"TotalWorkingYears\": 10,\n    \"TrainingTimesLastYear\": 3,\n    \"YearsAtCompany\": 5,\n    \"YearsInCurrentRole\": 3,\n    \"YearsSinceLastPromotion\": 1,\n    \"YearsWithCurrManager\": 3\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+                  "pm.test(\"Finite probability [0,1]\", () => { const j=pm.response.json(); const rows=j.results || [j.result || j]; rows.forEach(r => {pm.expect(Number.isFinite(r.estimated_probability)).to.eql(true); pm.expect(r.estimated_probability).to.be.within(0,1);}); });",
+                  "pm.test(\"Frozen B2 metadata\", () => { const j = pm.response.json(); const m = j.metadata || (j.result && j.result.metadata) || (j.results && j.results[0].metadata) || j; pm.expect(m.model_id).to.eql(\"rf-v3-final15-unweighted-b2\"); pm.expect(m.model_status).to.eql(\"research_candidate\"); pm.expect(m.independent_validation).to.eql(false); pm.expect(m.decision_support_only).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Predict optional null and omitted",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/predict",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference_id\": \"synthetic-one\",\n  \"features\": {\n    \"Age\": 35,\n    \"Department\": \"Research & Development\",\n    \"DistanceFromHome\": 5,\n    \"Education\": 3,\n    \"EnvironmentSatisfaction\": 3,\n    \"JobLevel\": 2,\n    \"JobSatisfaction\": 3,\n    \"MonthlyIncome\": 5000,\n    \"OverTime\": \"No\",\n    \"TotalWorkingYears\": 10,\n    \"TrainingTimesLastYear\": null,\n    \"YearsAtCompany\": 5,\n    \"YearsInCurrentRole\": 3,\n    \"YearsSinceLastPromotion\": 1\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+                  "pm.test(\"Finite probability [0,1]\", () => { const j=pm.response.json(); const rows=j.results || [j.result || j]; rows.forEach(r => {pm.expect(Number.isFinite(r.estimated_probability)).to.eql(true); pm.expect(r.estimated_probability).to.be.within(0,1);}); });",
+                  "pm.test(\"Frozen B2 metadata\", () => { const j = pm.response.json(); const m = j.metadata || (j.result && j.result.metadata) || (j.results && j.results[0].metadata) || j; pm.expect(m.model_id).to.eql(\"rf-v3-final15-unweighted-b2\"); pm.expect(m.model_status).to.eql(\"research_candidate\"); pm.expect(m.independent_validation).to.eql(false); pm.expect(m.decision_support_only).to.eql(true); });",
+                  "pm.test(\"Both optional imputed\", () => pm.expect(pm.response.json().result.imputed_features).to.eql([\"TrainingTimesLastYear\",\"YearsWithCurrManager\"]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Predict batch valid",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/predict/batch",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"reference_id\": \"synthetic-a\",\n      \"features\": {\n        \"Age\": 35,\n        \"Department\": \"Research & Development\",\n        \"DistanceFromHome\": 5,\n        \"Education\": 3,\n        \"EnvironmentSatisfaction\": 3,\n        \"JobLevel\": 2,\n        \"JobSatisfaction\": 3,\n        \"MonthlyIncome\": 5000,\n        \"OverTime\": \"No\",\n        \"TotalWorkingYears\": 10,\n        \"TrainingTimesLastYear\": 3,\n        \"YearsAtCompany\": 5,\n        \"YearsInCurrentRole\": 3,\n        \"YearsSinceLastPromotion\": 1,\n        \"YearsWithCurrManager\": 3\n      }\n    },\n    {\n      \"reference_id\": \"synthetic-b\",\n      \"features\": {\n        \"Age\": 35,\n        \"Department\": \"Research & Development\",\n        \"DistanceFromHome\": 5,\n        \"Education\": 3,\n        \"EnvironmentSatisfaction\": 3,\n        \"JobLevel\": 2,\n        \"JobSatisfaction\": 3,\n        \"MonthlyIncome\": 5000,\n        \"OverTime\": \"Yes\",\n        \"TotalWorkingYears\": 10,\n        \"TrainingTimesLastYear\": 3,\n        \"YearsAtCompany\": 5,\n        \"YearsInCurrentRole\": 3,\n        \"YearsSinceLastPromotion\": 1,\n        \"YearsWithCurrManager\": 3\n      }\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+                  "pm.test(\"Finite probability [0,1]\", () => { const j=pm.response.json(); const rows=j.results || [j.result || j]; rows.forEach(r => {pm.expect(Number.isFinite(r.estimated_probability)).to.eql(true); pm.expect(r.estimated_probability).to.be.within(0,1);}); });",
+                  "pm.test(\"Frozen B2 metadata\", () => { const j = pm.response.json(); const m = j.metadata || (j.result && j.result.metadata) || (j.results && j.results[0].metadata) || j; pm.expect(m.model_id).to.eql(\"rf-v3-final15-unweighted-b2\"); pm.expect(m.model_status).to.eql(\"research_candidate\"); pm.expect(m.independent_validation).to.eql(false); pm.expect(m.decision_support_only).to.eql(true); });",
+                  "pm.test(\"Request order preserved\", () => pm.expect(pm.response.json().results.map(r=>r.reference_id)).to.eql([\"synthetic-a\",\"synthetic-b\"]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Explain one valid",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/explain",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference_id\": \"synthetic-one\",\n  \"features\": {\n    \"Age\": 35,\n    \"Department\": \"Research & Development\",\n    \"DistanceFromHome\": 5,\n    \"Education\": 3,\n    \"EnvironmentSatisfaction\": 3,\n    \"JobLevel\": 2,\n    \"JobSatisfaction\": 3,\n    \"MonthlyIncome\": 5000,\n    \"OverTime\": \"No\",\n    \"TotalWorkingYears\": 10,\n    \"TrainingTimesLastYear\": 3,\n    \"YearsAtCompany\": 5,\n    \"YearsInCurrentRole\": 3,\n    \"YearsSinceLastPromotion\": 1,\n    \"YearsWithCurrManager\": 3\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);",
+                  "pm.test(\"Finite probability [0,1]\", () => { const j=pm.response.json(); const rows=j.results || [j.result || j]; rows.forEach(r => {pm.expect(Number.isFinite(r.estimated_probability)).to.eql(true); pm.expect(r.estimated_probability).to.be.within(0,1);}); });",
+                  "pm.test(\"Frozen B2 metadata\", () => { const j = pm.response.json(); const m = j.metadata || (j.result && j.result.metadata) || (j.results && j.results[0].metadata) || j; pm.expect(m.model_id).to.eql(\"rf-v3-final15-unweighted-b2\"); pm.expect(m.model_status).to.eql(\"research_candidate\"); pm.expect(m.independent_validation).to.eql(false); pm.expect(m.decision_support_only).to.eql(true); });",
+                  "pm.test(\"All fifteen SHAP features\", () => { const j=pm.response.json(); pm.expect(j.contributions.length).to.eql(15); pm.expect(new Set(j.contributions.map(c=>c.feature)).size).to.eql(15); pm.expect(j.top_factors.length).to.be.at.most(5); pm.expect(j.explanation_space).to.eql(\"probability\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3 — Negative tests",
+      "item": [
+        {
+          "name": "Missing service key",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [],
+            "url": "{{base_url}}/v1/model/info"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Wrong service key",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "deliberately-invalid-test-value"
+              }
+            ],
+            "url": "{{base_url}}/v1/model/info"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Missing required feature",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/predict",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference_id\": \"synthetic-one\",\n  \"features\": {\n    \"Department\": \"Research & Development\",\n    \"DistanceFromHome\": 5,\n    \"Education\": 3,\n    \"EnvironmentSatisfaction\": 3,\n    \"JobLevel\": 2,\n    \"JobSatisfaction\": 3,\n    \"MonthlyIncome\": 5000,\n    \"OverTime\": \"No\",\n    \"TotalWorkingYears\": 10,\n    \"TrainingTimesLastYear\": 3,\n    \"YearsAtCompany\": 5,\n    \"YearsInCurrentRole\": 3,\n    \"YearsSinceLastPromotion\": 1,\n    \"YearsWithCurrManager\": 3\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown feature",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/predict",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference_id\": \"synthetic-one\",\n  \"features\": {\n    \"Age\": 35,\n    \"Department\": \"Research & Development\",\n    \"DistanceFromHome\": 5,\n    \"Education\": 3,\n    \"EnvironmentSatisfaction\": 3,\n    \"JobLevel\": 2,\n    \"JobSatisfaction\": 3,\n    \"MonthlyIncome\": 5000,\n    \"OverTime\": \"No\",\n    \"TotalWorkingYears\": 10,\n    \"TrainingTimesLastYear\": 3,\n    \"YearsAtCompany\": 5,\n    \"YearsInCurrentRole\": 3,\n    \"YearsSinceLastPromotion\": 1,\n    \"YearsWithCurrManager\": 3,\n    \"UnknownFeature\": 1\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Wrong category",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/predict",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference_id\": \"synthetic-one\",\n  \"features\": {\n    \"Age\": 35,\n    \"Department\": \"Unmapped\",\n    \"DistanceFromHome\": 5,\n    \"Education\": 3,\n    \"EnvironmentSatisfaction\": 3,\n    \"JobLevel\": 2,\n    \"JobSatisfaction\": 3,\n    \"MonthlyIncome\": 5000,\n    \"OverTime\": \"No\",\n    \"TotalWorkingYears\": 10,\n    \"TrainingTimesLastYear\": 3,\n    \"YearsAtCompany\": 5,\n    \"YearsInCurrentRole\": 3,\n    \"YearsSinceLastPromotion\": 1,\n    \"YearsWithCurrManager\": 3\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Float for integer",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/predict",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference_id\": \"synthetic-one\",\n  \"features\": {\n    \"Age\": 41.5,\n    \"Department\": \"Research & Development\",\n    \"DistanceFromHome\": 5,\n    \"Education\": 3,\n    \"EnvironmentSatisfaction\": 3,\n    \"JobLevel\": 2,\n    \"JobSatisfaction\": 3,\n    \"MonthlyIncome\": 5000,\n    \"OverTime\": \"No\",\n    \"TotalWorkingYears\": 10,\n    \"TrainingTimesLastYear\": 3,\n    \"YearsAtCompany\": 5,\n    \"YearsInCurrentRole\": 3,\n    \"YearsSinceLastPromotion\": 1,\n    \"YearsWithCurrManager\": 3\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Boolean for integer",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/predict",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference_id\": \"synthetic-one\",\n  \"features\": {\n    \"Age\": true,\n    \"Department\": \"Research & Development\",\n    \"DistanceFromHome\": 5,\n    \"Education\": 3,\n    \"EnvironmentSatisfaction\": 3,\n    \"JobLevel\": 2,\n    \"JobSatisfaction\": 3,\n    \"MonthlyIncome\": 5000,\n    \"OverTime\": \"No\",\n    \"TotalWorkingYears\": 10,\n    \"TrainingTimesLastYear\": 3,\n    \"YearsAtCompany\": 5,\n    \"YearsInCurrentRole\": 3,\n    \"YearsSinceLastPromotion\": 1,\n    \"YearsWithCurrManager\": 3\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Empty batch",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/predict/batch",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Batch exceeds 100",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/predict/batch",
+            "body": {
+              "mode": "raw",
+              "raw": "{{oversized_batch}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const template={\"reference_id\":\"synthetic-one\",\"features\":{\"Age\":35,\"Department\":\"Research & Development\",\"DistanceFromHome\":5,\"Education\":3,\"EnvironmentSatisfaction\":3,\"JobLevel\":2,\"JobSatisfaction\":3,\"MonthlyIncome\":5000,\"OverTime\":\"No\",\"TotalWorkingYears\":10,\"TrainingTimesLastYear\":3,\"YearsAtCompany\":5,\"YearsInCurrentRole\":3,\"YearsSinceLastPromotion\":1,\"YearsWithCurrManager\":3}};",
+                  "pm.variables.set(\"oversized_batch\", JSON.stringify({items:Array.from({length:101},(_,i)=>({...template,reference_id:\"synthetic-\"+i}))}));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Duplicate references",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/predict/batch",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"reference_id\": \"synthetic-one\",\n      \"features\": {\n        \"Age\": 35,\n        \"Department\": \"Research & Development\",\n        \"DistanceFromHome\": 5,\n        \"Education\": 3,\n        \"EnvironmentSatisfaction\": 3,\n        \"JobLevel\": 2,\n        \"JobSatisfaction\": 3,\n        \"MonthlyIncome\": 5000,\n        \"OverTime\": \"No\",\n        \"TotalWorkingYears\": 10,\n        \"TrainingTimesLastYear\": 3,\n        \"YearsAtCompany\": 5,\n        \"YearsInCurrentRole\": 3,\n        \"YearsSinceLastPromotion\": 1,\n        \"YearsWithCurrManager\": 3\n      }\n    },\n    {\n      \"reference_id\": \"synthetic-one\",\n      \"features\": {\n        \"Age\": 35,\n        \"Department\": \"Research & Development\",\n        \"DistanceFromHome\": 5,\n        \"Education\": 3,\n        \"EnvironmentSatisfaction\": 3,\n        \"JobLevel\": 2,\n        \"JobSatisfaction\": 3,\n        \"MonthlyIncome\": 5000,\n        \"OverTime\": \"No\",\n        \"TotalWorkingYears\": 10,\n        \"TrainingTimesLastYear\": 3,\n        \"YearsAtCompany\": 5,\n        \"YearsInCurrentRole\": 3,\n        \"YearsSinceLastPromotion\": 1,\n        \"YearsWithCurrManager\": 3\n      }\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Extremely large integer",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              }
+            ],
+            "url": "{{base_url}}/v1/predict",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference_id\": \"synthetic-one\",\n  \"features\": {\n    \"Age\": 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999,\n    \"Department\": \"Research & Development\",\n    \"DistanceFromHome\": 5,\n    \"Education\": 3,\n    \"EnvironmentSatisfaction\": 3,\n    \"JobLevel\": 2,\n    \"JobSatisfaction\": 3,\n    \"MonthlyIncome\": 5000,\n    \"OverTime\": \"No\",\n    \"TotalWorkingYears\": 10,\n    \"TrainingTimesLastYear\": 3,\n    \"YearsAtCompany\": 5,\n    \"YearsInCurrentRole\": 3,\n    \"YearsSinceLastPromotion\": 1,\n    \"YearsWithCurrManager\": 3\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"JSON response\", () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AdaBoost s1",
+      "item": [
+        {
+          "name": "List available models",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/v1/models"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Success\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Both model entries\", () => pm.expect(r.models.length).to.equal(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Predict AdaBoost s1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/v1/predict",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model_id\": \"adaboost-v3-final15-baseline-sigmoid-s1\",\n  \"reference_id\": \"synthetic-demo\",\n  \"features\": {\n    \"Age\": 35,\n    \"Department\": \"Sales\",\n    \"DistanceFromHome\": 5,\n    \"Education\": 3,\n    \"EnvironmentSatisfaction\": 3,\n    \"JobLevel\": 2,\n    \"JobSatisfaction\": 3,\n    \"MonthlyIncome\": 5000,\n    \"OverTime\": \"No\",\n    \"TotalWorkingYears\": 10,\n    \"TrainingTimesLastYear\": 3,\n    \"YearsAtCompany\": 5,\n    \"YearsInCurrentRole\": 3,\n    \"YearsSinceLastPromotion\": 1,\n    \"YearsWithCurrManager\": 3\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Success\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"AdaBoost selected\", () => pm.expect((r.result || r).metadata.model_id).to.equal(\"adaboost-v3-final15-baseline-sigmoid-s1\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Explain AdaBoost s1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-ERIS-Service-Key",
+                "value": "{{service_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/v1/explain",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model_id\": \"adaboost-v3-final15-baseline-sigmoid-s1\",\n  \"reference_id\": \"synthetic-demo\",\n  \"features\": {\n    \"Age\": 35,\n    \"Department\": \"Sales\",\n    \"DistanceFromHome\": 5,\n    \"Education\": 3,\n    \"EnvironmentSatisfaction\": 3,\n    \"JobLevel\": 2,\n    \"JobSatisfaction\": 3,\n    \"MonthlyIncome\": 5000,\n    \"OverTime\": \"No\",\n    \"TotalWorkingYears\": 10,\n    \"TrainingTimesLastYear\": 3,\n    \"YearsAtCompany\": 5,\n    \"YearsInCurrentRole\": 3,\n    \"YearsSinceLastPromotion\": 1,\n    \"YearsWithCurrManager\": 3\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Success\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"AdaBoost selected\", () => pm.expect((r.result || r).metadata.model_id).to.equal(\"adaboost-v3-final15-baseline-sigmoid-s1\"));",
+                  "pm.test(\"All features and probability additivity\", () => { pm.expect(r.contributions.length).to.equal(15); pm.expect(Math.abs(r.base_value + r.contributions.reduce((s,c)=>s+c.shap_value,0)-r.estimated_probability)).to.be.below(1e-8); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

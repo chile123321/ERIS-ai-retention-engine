@@ -1,0 +1,11 @@
+# Use this workspace to collaborate
+workspace:
+  id: 88868ea9-cd56-4f00-854b-57ded35c61fc
+
+localResources:
+  specs:
+    - ../docs/model-api-v1.openapi.json
+
+cloudResources:
+  collections:
+    ../postman/collections/ERIS Model API v1 — B2 research candidate: 069c9964-1f82-4af2-b419-f1e038891dc7
