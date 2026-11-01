@@ -1,4 +1,4 @@
-"""Guards for the supplied immutable data split."""
+"""Dataset-neutral guards for the development/final-test boundary."""
 
 from pathlib import Path
 

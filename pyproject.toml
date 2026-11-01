@@ -3,25 +3,25 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "eris-b2-model-api"
-version = "1.0.0"
-description = "ERIS frozen Random Forest B2 inference service"
+name = "eris-retention-engine"
+version = "0.2.0"
+description = "Dataset-neutral foundation for the ERIS employee-retention project"
 readme = "README.md"
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.12,<3.13"
 dependencies = [
-    "fastapi>=0.110", "uvicorn[standard]>=0.29",
-    "pydantic>=2", "pydantic-settings>=2", "PyYAML>=6",
-    "pandas>=2", "numpy>=1.26,<2.5", "scipy>=1.11,<1.17",
-    "scikit-learn>=1.4,<1.10", "joblib>=1.3", "matplotlib>=3.8",
-    "shap>=0.50,<0.51",
+    "numpy>=2.0,<3",
+    "pandas>=2.2,<4",
+    "scikit-learn>=1.5,<2",
+    "PyYAML>=6,<7",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8", "httpx>=0.27", "ruff>=0.4", "mypy==2.3.1",
-    "types-PyYAML==6.0.12.20260906", "pandas-stubs==3.0.5.260914",
-    "scikit-learn-stubs==0.0.3", "scipy-stubs==1.16.3.3",
-    "joblib-stubs==1.5.3.1.20260117",
+    "mypy>=1.15,<3",
+    "pandas-stubs>=2.2",
+    "pytest>=8,<10",
+    "ruff>=0.11,<1",
+    "scikit-learn-stubs>=0.0.3",
 ]
 
 [tool.setuptools.packages.find]
@@ -32,14 +32,14 @@ testpaths = ["tests"]
 addopts = "-ra"
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
 line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 packages = ["eris_ml"]
-mypy_path = ["src", "typings"]
+mypy_path = ["src"]

@@ -1,75 +1,60 @@
-# ERIS Random Forest B2 Model Service
+# ERIS Retention Engine
 
-Repository tối giản để nạp và vận hành duy nhất research candidate:
+ERIS đang chuyển sang dataset mới. Active tree hiện chỉ là nền tảng trung lập cho
+data intake và đánh giá; chưa có dataset production, target, feature schema, model,
+bundle hoặc API mới được phê duyệt.
 
-- Model ID: `rf-v3-final15-unweighted-b2`
-- Schema: `v3_final_15` (15 feature, 13 bắt buộc, 2 optional)
-- Bundle: `artifacts/models/v3_final_15/b2/`
-- SHA-256 `pipeline.joblib`:
-  `0c72841a8505a910d31c2a687fbcbf5259e3afb60f9eddcb7586801519b5628f`
+IBM/B2 đã được đóng băng làm reference lịch sử tại tag
+`archive/ibm-b2-final`. Không mặc định sao chép feature, vocabulary, preprocessing,
+target hay business assumptions của IBM sang dataset mới.
 
-Model trả xác suất raw cho `Attrition=1`; không áp threshold, risk level hay quyết
-định nhân sự tự động. Đây là model nghiên cứu trên IBM HR Analytics, chưa được xác
-thực cho doanh nghiệp mới, fairness production hoặc horizon 3–6 tháng.
-
-## Cấu trúc còn lại
+## Cấu trúc
 
 ```text
-artifacts/models/v3_final_15/b2/              Bundle bất biến
-artifacts/reports/v3_final_15/{b2,devfix1,audit_b2_1}/
-artifacts/predictions/v3_final_15/devfix1/    Evidence trực tiếp của B2
-configs/features/feature_set_v3_final_15.yaml Schema feature
-src/eris_ml/api_b2/                           FastAPI service
-src/eris_ml/models/bundle_v3_b2.py            Public load/predict/explain interface
-deploy/api_b2/                                 Docker runtime
-tests/                                        B2 API/schema/contract tests
-docs/                                         API contract và OpenAPI
+configs/             Quy tắc cho config tương lai, chưa có config model giả
+data/                Dataset local-only, chỉ commit README
+artifacts/           Output local-only, chỉ commit README
+docs/architecture.md Kiến trúc và ranh giới trách nhiệm
+docs/archive/        Hồ sơ frozen reference
+src/eris_ml/         Hashing, metric và split-boundary utilities trung lập
+tests/unit/          Unit tests không phụ thuộc IBM
 ```
 
-Một số module legacy-named dưới `src/eris_ml/` vẫn được giữ vì object đã pickle trong
-bundle tham chiếu trực tiếp đến các import path đó. Xóa hoặc đổi tên chúng sẽ làm bundle
-không nạp được.
+## Workflow cho dataset mới
 
-## Cài đặt local
+1. Data intake và provenance.
+2. Data audit.
+3. Chốt target và feature contract.
+4. Tạo immutable split.
+5. Chạy baselines.
+6. So sánh candidate và calibration khi cần.
+7. Đánh giá final test đúng protocol.
+8. Đóng gói model.
+9. Tích hợp API/backend sau phê duyệt.
 
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
-```
+## Cài đặt và quality gate
 
-Bundle và evidence trong `artifacts/` bị Git ignore; chúng phải được chuyển giao nội bộ
-và kiểm tra checksum, không được tái tạo ở startup.
+Yêu cầu Python 3.12 và [uv](https://docs.astral.sh/uv/):
 
-## Chạy API local
-
-```powershell
-$env:ERIS_SERVICE_API_KEY = & .\.venv\Scripts\python.exe -B -c "import secrets; print(secrets.token_urlsafe(40))"
-.\.venv\Scripts\python.exe -m uvicorn eris_ml.api_b2.main:app --host 127.0.0.1 --port 8000 --workers 1 --no-access-log
-```
-
-Endpoints: `/health`, `/ready`, `/v1/model/info`, `/v1/predict`,
-`/v1/predict/batch`, `/v1/explain`. Các endpoint `/v1/*` yêu cầu header
-`X-ERIS-Service-Key`. Xem [API contract](docs/api_b2_v1_contract.md).
-
-## Docker
-
-```powershell
-$env:ERIS_SERVICE_API_KEY = & .\.venv\Scripts\python.exe -B -c "import secrets; print(secrets.token_urlsafe(40))"
-docker compose -f compose.model-api.yml up --build -d
-docker compose -f compose.model-api.yml down
-Remove-Item Env:ERIS_SERVICE_API_KEY
-```
-
-## Quality gate
-
-```powershell
-.\.venv\Scripts\python.exe -B -m pytest -q -p no:cacheprovider
-.\.venv\Scripts\python.exe -B -m mypy --no-incremental --cache-dir=.mypy_b2_check src
-.\.venv\Scripts\python.exe -B -m ruff check --no-cache src scripts tests
-.\.venv\Scripts\python.exe -m pip check
+```bash
+uv sync --frozen --extra dev
+uv run pytest -q
+uv run ruff check .
+uv run mypy src
 git diff --check
 ```
 
-Không còn data/training/tuning/calibration/AdaBoost/UI example trong repository này.
-Muốn train dataset mới, hãy tạo repository hoặc namespace nghiên cứu riêng; không ghi
-đè bundle và evidence B2.
+Hiện không có `.env.example` vì active code không đọc environment variable. Khi có
+runtime thật, người nhận chỉ được yêu cầu đặt file `.env` được chuyển qua kênh riêng
+vào repo root rồi chạy `docker compose up --build`; repository phải tự chứa hoặc tự tải
+và xác minh mọi artifact còn lại.
+
+## Xem frozen IBM/B2 reference
+
+```bash
+git fetch --tags
+git switch --detach archive/ibm-b2-final
+git switch main
+```
+
+Không merge ngược code IBM/B2 vào pipeline dataset mới.

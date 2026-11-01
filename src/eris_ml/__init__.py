@@ -1,3 +1,3 @@
-"""ERIS employee-retention machine-learning service."""
+"""Dataset-neutral foundation for the ERIS retention engine."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

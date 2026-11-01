@@ -2,21 +2,28 @@
 venv/
 __pycache__/
 *.py[cod]
-.idea/
-.vscode/
-.env
-.env.*
-!.env.example
 .pytest_cache/
 .mypy_cache/
-.mypy_b2_check/
 .ruff_cache/
 .coverage
 htmlcov/
 build/
 dist/
 *.egg-info/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+.env
+.env.*
+*.pem
+*.key
+.ipynb_checkpoints/
+mlruns/
+wandb/
 
-# Bundle/evidence are transferred separately and never committed.
+data/*
+!data/README.md
+
 artifacts/*
 !artifacts/README.md
