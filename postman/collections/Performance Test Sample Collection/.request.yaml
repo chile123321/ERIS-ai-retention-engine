@@ -1,5 +1,0 @@
-$kind: http-request
-name: ""
-url: http://127.0.0.1:8000/v1/model/info
-method: GET
-order: 1000

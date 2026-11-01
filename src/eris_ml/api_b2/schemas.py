@@ -17,8 +17,6 @@ from pydantic import (
 )
 
 MODEL_ID: Final = "rf-v3-final15-unweighted-b2"
-ADABOOST_ID: Final = "adaboost-v3-final15-baseline-sigmoid-s1"
-ADABOOST_SHA256: Final = "af7dab8f6044c9a902789fd8b69aac16c4e187157508780c54cd1b39b1a491ca"
 MODEL_SHA256: Final = "0c72841a8505a910d31c2a687fbcbf5259e3afb60f9eddcb7586801519b5628f"
 FEATURE_SCHEMA_VERSION: Final = "v3_final_15"
 TECHNICAL_MAXIMUM: Final = 2_147_483_647  # Representation guardrail, not a business bound.
@@ -82,7 +80,6 @@ class EmployeeFeatures(ContractModel):
 
 
 class PredictRequest(ContractModel):
-    model_id: StrictStr = MODEL_ID
     request_id: UUID | None = None
     reference_id: ReferenceId
     features: EmployeeFeatures
@@ -94,7 +91,6 @@ class BatchItem(ContractModel):
 
 
 class BatchPredictRequest(ContractModel):
-    model_id: StrictStr = MODEL_ID
     request_id: UUID | None = None
     items: Annotated[list[BatchItem], Field(min_length=1, max_length=100)]
 
@@ -121,33 +117,11 @@ class ModelMetadata(ContractModel):
     independent_validation: Annotated[Literal[False], BeforeValidator(_strict_boolean)] = False
 
 
-class AdaBoostMetadata(ContractModel):
-    model_id: Literal["adaboost-v3-final15-baseline-sigmoid-s1"] = ADABOOST_ID
-    model_sha256: Literal[
-        "af7dab8f6044c9a902789fd8b69aac16c4e187157508780c54cd1b39b1a491ca"
-    ] = ADABOOST_SHA256
-    feature_schema_version: Literal["v3_final_15"] = FEATURE_SCHEMA_VERSION
-    model_status: Literal["research_candidate"] = "research_candidate"
-    decision_support_only: Literal[True] = True
-    independent_validation: Literal[False] = False
-
-
-class AvailableModel(ContractModel):
-    metadata: ModelMetadata | AdaBoostMetadata
-    ready: bool
-    supports_explain: Literal[True] = True
-
-
-class ModelListResponse(ContractModel):
-    default_model_id: Literal["rf-v3-final15-unweighted-b2"] = MODEL_ID
-    models: list[AvailableModel]
-
-
 class PredictionResult(ContractModel):
     reference_id: ReferenceId
     estimated_probability: Probability
     imputed_features: Annotated[list[OptionalFeatureName], Field(max_length=2)]
-    metadata: ModelMetadata | AdaBoostMetadata
+    metadata: ModelMetadata
 
     @field_validator("imputed_features")
     @classmethod
@@ -204,7 +178,7 @@ class ExplainResponse(ContractModel):
     warning: Literal[
         "SHAP explains model behavior; it does not establish causality."
     ] = SHAP_WARNING
-    metadata: ModelMetadata | AdaBoostMetadata
+    metadata: ModelMetadata
 
     @model_validator(mode="after")
     def complete_contributions(self) -> Self:
@@ -219,12 +193,8 @@ class ExplainResponse(ContractModel):
 ErrorCode = Literal[
     "AUTH_MISSING", "AUTH_INVALID", "VALIDATION_ERROR", "BATCH_TOO_LARGE",
     "MODEL_NOT_READY", "BUNDLE_INTEGRITY_ERROR", "INFERENCE_ERROR", "EXPLANATION_ERROR",
-    "MODEL_UNKNOWN", "EXPLANATION_BUSY", "EXPLANATION_TIMEOUT",
 ]
 SAFE_ERROR_MESSAGES: dict[ErrorCode, str] = {
-    "MODEL_UNKNOWN": "Requested model is not supported.",
-    "EXPLANATION_BUSY": "Explanation capacity is full. Retry later.",
-    "EXPLANATION_TIMEOUT": "Explanation wait timed out; running computation may continue.",
     "AUTH_MISSING": "Service key is required.",
     "AUTH_INVALID": "Service key is invalid.",
     "VALIDATION_ERROR": "Request validation failed.",

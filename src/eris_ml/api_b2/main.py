@@ -1,6 +1,5 @@
-"""Multi-model local service; the legacy module path and default B2 are preserved."""
+"""B2 local service. Run uvicorn eris_ml.api_b2.main:app --host 127.0.0.1."""
 
-import asyncio
 import logging
 import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -12,19 +11,14 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader
 
-from eris_ml.api_b2.explanation_worker import ExplanationWorker
 from eris_ml.api_b2.schemas import (
-    MODEL_ID,
     SAFE_ERROR_MESSAGES,
-    AdaBoostMetadata,
-    AvailableModel,
     BatchPredictRequest,
     BatchPredictResponse,
     ErrorCode,
     ErrorResponse,
     ExplainRequest,
     ExplainResponse,
-    ModelListResponse,
     ModelMetadata,
     PredictRequest,
     PredictResponse,
@@ -46,18 +40,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         service = ModelService(config)
         application.state.service = service
         service.start()
-        worker = ExplanationWorker(config.explain_queue_size, config.explain_timeout_seconds)
-        application.state.explanation_worker = worker
         try:
             yield
         finally:
-            await asyncio.to_thread(worker.close)
             service.bundle = None
-            service.adaboost = None
 
     application = FastAPI(
-        title="ERIS V3 Model API",
-        version="1.1.0",
+        title="ERIS V3 B2 Model API",
+        version="1.0.0",
         lifespan=lifespan,
         docs_url=None,
         redoc_url=None,
@@ -77,8 +67,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             service: ModelService | None = getattr(application.state, "service", None)
             if service is None:
                 return error_response("MODEL_NOT_READY", 503, request.state.request_id)
-            if not service.settings.service_api_key.get_secret_value().strip():
-                return error_response("MODEL_NOT_READY", 503, request.state.request_id)
+            try:
+                service.require_ready()
+            except ServiceError as exc:
+                return error_response(exc.code, exc.status, request.state.request_id)
             key = request.headers.get("X-ERIS-Service-Key")
             if key is None:
                 return error_response("AUTH_MISSING", 401, request.state.request_id)
@@ -95,17 +87,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def invalid_request(request: Request, exc: RequestValidationError) -> JSONResponse:
         # Never echo Pydantic input/context or exception text.
         code: ErrorCode = "VALIDATION_ERROR"
-        # Preserve the legacy unavailable-B2 response for requests with no model selection,
-        # while keeping AdaBoost independently usable if B2 is unavailable.
-        if request.url.path in ("/v1/predict", "/v1/predict/batch", "/v1/explain"):
-            selected = (
-                exc.body.get("model_id", MODEL_ID) if isinstance(exc.body, dict) else MODEL_ID
-            )
-            if isinstance(selected, str):
-                try:
-                    application.state.service.select(selected)
-                except ServiceError as error:
-                    return error_response(error.code, error.status, request.state.request_id)
         if isinstance(exc.body, dict):
             try:
                 request.state.request_id = UUID(str(exc.body.get("request_id")))
@@ -142,18 +123,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def model_info() -> ModelMetadata:
         application.state.service.require_ready()
         return ModelMetadata()
-
-    @application.get(
-        "/v1/models", response_model=ModelListResponse,
-        dependencies=[Security(api_key_header)],
-        responses={401: {"model": ErrorResponse}, 503: {"model": ErrorResponse}},
-    )
-    def models() -> ModelListResponse:
-        service: ModelService = application.state.service
-        return ModelListResponse(models=[
-            AvailableModel(metadata=ModelMetadata(), ready=service.bundle is not None),
-            AvailableModel(metadata=AdaBoostMetadata(), ready=service.adaboost is not None),
-        ])
 
     @application.post(
         "/v1/predict",
@@ -192,20 +161,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         response_model=ExplainResponse,
         dependencies=[Security(api_key_header)],
         responses={
-            429: {"model": ErrorResponse},
-            504: {"model": ErrorResponse},
             401: {"model": ErrorResponse},
             422: {"model": ErrorResponse},
             503: {"model": ErrorResponse},
             500: {"model": ErrorResponse},
         },
     )
-    async def explain(body: ExplainRequest, request: Request) -> ExplainResponse:
+    def explain(body: ExplainRequest, request: Request) -> ExplainResponse:
         request.state.request_id = body.request_id or request.state.request_id
         service: ModelService = application.state.service
-        service.select(body.model_id)
-        worker: ExplanationWorker = application.state.explanation_worker
-        return await worker.run(lambda: service.explain(body, request.state.request_id))
+        return service.explain(body, request.state.request_id)
 
     return application
 

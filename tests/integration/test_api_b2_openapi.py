@@ -16,7 +16,6 @@ EXPECTED_PATHS = {
     "/health",
     "/ready",
     "/v1/model/info",
-    "/v1/models",
     "/v1/predict",
     "/v1/predict/batch",
     "/v1/explain",
@@ -76,7 +75,7 @@ def test_endpoint_and_security_metadata():
     assert "security" not in spec
     for path, methods in spec["paths"].items():
         assert set(methods) == {
-            "get" if path in ("/health", "/ready", "/v1/model/info", "/v1/models") else "post"
+            "get" if path in ("/health", "/ready", "/v1/model/info") else "post"
         }
         operation = next(iter(methods.values()))
         if path.startswith("/v1/"):
@@ -136,26 +135,3 @@ def test_schema_fidelity_and_no_sensitive_documentation():
         "Traceback",
     ):
         assert forbidden not in text
-
-
-def test_postman_structure_and_synthetic_payloads():
-    collection = json.loads(
-        (ROOT / "postman/ERIS-Model-API-v1.postman_collection.json").read_bytes()
-    )
-    environment = json.loads(
-        (ROOT / "postman/ERIS-Model-API-Local.postman_environment.json").read_bytes()
-    )
-    assert collection["info"]["schema"].endswith("/v2.1.0/collection.json")
-    requests = [item for folder in collection["item"] for item in folder["item"]]
-    assert len(requests) == 21
-    assert {v["key"]: v["value"] for v in environment["values"]} == {
-        "base_url": "http://127.0.0.1:8000",
-        "service_key": "",
-    }
-    assert {v["key"]: v["value"] for v in collection["variable"]}["service_key"] == ""
-    for item in requests:
-        assert item["request"]["url"].startswith("{{base_url}}/")
-        assert item["event"][0]["listen"] == "test"
-        body = item["request"].get("body", {}).get("raw")
-        if body and not body.startswith("{{"):
-            json.loads(body)

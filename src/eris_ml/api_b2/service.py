@@ -1,4 +1,4 @@
-"""Read-only dispatch to frozen B2 and s1 inference interfaces, without fallback."""
+"""Read-only adapter to the frozen B2 inference interfaces."""
 
 import hashlib
 import logging
@@ -6,9 +6,7 @@ from threading import RLock
 from typing import Any
 from uuid import UUID
 
-from eris_ml.api_b2.adaboost import AdaBoostAdapter
 from eris_ml.api_b2.schemas import (
-    ADABOOST_ID,
     FEATURE_NAMES,
     FEATURE_SCHEMA_VERSION,
     MODEL_ID,
@@ -41,8 +39,6 @@ class ModelService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.bundle: b2.B2Bundle | None = None
-        self.adaboost: AdaBoostAdapter | None = None
-        self.adaboost_failure: ErrorCode = "MODEL_NOT_READY"
         self.failure: ErrorCode = "MODEL_NOT_READY"
         self._started = False
         self._lock = RLock()
@@ -76,24 +72,6 @@ class ModelService:
             except Exception:
                 self.failure = "BUNDLE_INTEGRITY_ERROR"
                 LOGGER.warning("B2 unavailable: BUNDLE_INTEGRITY_ERROR")
-            try:
-                self.adaboost = AdaBoostAdapter(self.settings.adaboost_bundle_path)
-            except FileNotFoundError:
-                LOGGER.warning("AdaBoost unavailable: MODEL_NOT_READY")
-            except Exception:
-                self.adaboost_failure = "BUNDLE_INTEGRITY_ERROR"
-                LOGGER.warning("AdaBoost unavailable: BUNDLE_INTEGRITY_ERROR")
-
-    def select(self, model_id: str) -> None:
-        if model_id not in (MODEL_ID, ADABOOST_ID):
-            raise ServiceError("MODEL_UNKNOWN", 422)
-        if not self.settings.service_api_key.get_secret_value().strip():
-            raise ServiceError("MODEL_NOT_READY", 503)
-        if model_id == MODEL_ID:
-            self.require_ready()
-        elif self.adaboost is None:
-            raise ServiceError(self.adaboost_failure, 503)
-
     def require_ready(self) -> b2.B2Bundle:
         if self.bundle is None:
             raise ServiceError(self.failure, 503)
@@ -115,13 +93,7 @@ class ModelService:
         )
 
     def predict(self, request: PredictRequest, request_id: UUID) -> PredictResponse:
-        self.select(request.model_id)
         try:
-            if request.model_id == ADABOOST_ID:
-                assert self.adaboost is not None
-                return PredictResponse(request_id=request_id, result=self.adaboost.predict(
-                    [request.features], [request.reference_id]
-                )[0])
             raw = b2.predict_one(
                 self.require_ready(), request.features.model_dump(exclude_none=True)
             )
@@ -132,17 +104,10 @@ class ModelService:
             raise ServiceError("INFERENCE_ERROR", 500) from None
 
     def batch(self, request: BatchPredictRequest, request_id: UUID) -> BatchPredictResponse:
-        self.select(request.model_id)
         if len(request.items) > self.settings.max_batch_size:
             # API-1 reserves BATCH_TOO_LARGE's fixed message for >100 items.
             raise ServiceError("VALIDATION_ERROR", 422)
         try:
-            if request.model_id == ADABOOST_ID:
-                assert self.adaboost is not None
-                return BatchPredictResponse(request_id=request_id, results=self.adaboost.predict(
-                    [item.features for item in request.items],
-                    [item.reference_id for item in request.items],
-                ))
             records = [item.features.model_dump(exclude_none=True) for item in request.items]
             raw = b2.predict_batch(self.require_ready(), records)
             return BatchPredictResponse(
@@ -156,12 +121,7 @@ class ModelService:
             raise ServiceError("INFERENCE_ERROR", 500) from None
 
     def explain(self, request: ExplainRequest, request_id: UUID) -> ExplainResponse:
-        self.select(request.model_id)
         try:
-            if request.model_id == ADABOOST_ID:
-                assert self.adaboost is not None
-                return self.adaboost.explain(request.features, request_id=request_id,
-                                            reference_id=request.reference_id)
             original = request.features.model_dump()
             with self._lock:
                 raw = b2.explain_one(

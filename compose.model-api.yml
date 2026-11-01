@@ -8,8 +8,6 @@ services:
       - "127.0.0.1:8000:8000"
     environment:
       ERIS_SERVICE_API_KEY: "${ERIS_SERVICE_API_KEY:?Set a nonempty local service key in your shell}"
-      ERIS_EXPLAIN_QUEUE_SIZE: "2"
-      ERIS_EXPLAIN_TIMEOUT_SECONDS: "60"
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid

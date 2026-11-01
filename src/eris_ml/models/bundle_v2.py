@@ -23,7 +23,6 @@ from sklearn.utils.validation import check_is_fitted
 from eris_ml.evaluation.feature_ablation import GROUPS
 from eris_ml.features.definitions import FeatureDefinition
 from eris_ml.features.preprocessing import build_preprocessor
-from eris_ml.models.persistence import sidecar_paths
 from eris_ml.utils.hashing import sha256_file
 
 CANDIDATE = "logistic-general16-v2-r1"
@@ -39,6 +38,13 @@ LIMITATIONS = (
     "No validated 3-6 month horizon, one-month early intervention, new-employer fairness or "
     "production performance. V1 final test was previously used and does not certify V2."
 )
+
+
+def sidecar_paths(path: Path) -> tuple[Path, Path]:
+    """Return the legacy sidecar names used by the imported bundle helpers."""
+    if path.suffix != ".joblib":
+        raise ValueError("Bundle path must end in .joblib.")
+    return path.with_suffix(".metadata.json"), path.with_suffix(".sha256")
 
 
 def runtime_versions() -> dict[str, str]:

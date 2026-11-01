@@ -20,7 +20,6 @@ RUN python -m pip install --no-compile --only-binary=:all: -r /app/requirements-
 # .dockerignore permits only the existing inference import closure, not all src.
 COPY src/eris_ml/ /app/src/eris_ml/
 COPY artifacts/models/v3_final_15/b2/ /app/artifacts/models/v3_final_15/b2/
-COPY artifacts/models/adaboost_v3/s1/ /app/artifacts/models/adaboost_v3/s1/
 RUN chmod -R a-w /app && chmod -R a+rX /app
 USER 10001:10001
 EXPOSE 8000
